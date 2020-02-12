@@ -48,7 +48,7 @@
 <meta itemprop="description" content="OpenFOAM中蒸发冷凝求解器笔记">
 <meta itemprop="datePublished" content="2020-02-12T16:44:32&#43;08:00" />
 <meta itemprop="dateModified" content="2020-02-12T16:44:32&#43;08:00" />
-<meta itemprop="wordCount" content="2950">
+<meta itemprop="wordCount" content="4245">
 
 
 
@@ -124,8 +124,8 @@
         <div class="post-category">
             <a href="/categories/openfoam/"> OpenFOAM </a>
             </div>
-          <span class="more-meta"> 2950 words </span>
-          <span class="more-meta"> 6 mins read </span>
+          <span class="more-meta"> 4245 words </span>
+          <span class="more-meta"> 9 mins read </span>
         
       </div>
     </header>
@@ -138,6 +138,8 @@
     <li><a href="#总览">总览</a></li>
     <li><a href="#主文件">主文件</a></li>
     <li><a href="#相变模型分析">相变模型分析</a></li>
+    <li><a href="#表面张力模型">表面张力模型</a></li>
+    <li><a href="#混合物物性">混合物物性</a></li>
   </ul>
 </nav>
   </div>
@@ -522,7 +524,7 @@ $$
 $$
 而考虑到相变的相输运方程为，
 $$
-\frac{\partial \alpha_l}{\partial t} + \nabla \cdot (\alpha_l \bold{U}) =\alpha_l\nabla\cdot\bold{U}-\alpha_l \left ( \frac{\dot{m}}{\rho_l}- \frac{\dot{m}}{\rho_v} \right ) + \frac{\dot{m}}{\rho_l}
+\frac{\partial \alpha_l}{\partial t} + \nabla \cdot (\alpha_l \mathbf U) =\alpha_l\nabla\cdot\mathbf U-\alpha_l \left ( \frac{\dot{m}}{\rho_l}- \frac{\dot{m}}{\rho_v} \right ) + \frac{\dot{m}}{\rho_l}
 $$
 右侧前两项在不可压流体中为0，计算时增加可以提高数值稳定性。MULES对该方程有进一步的修正，并没有直接体现在这个方程内。</p>
 <p>以派生类<code>constant</code>为例介绍该模型的求解过程。<code>constant</code>类实际即为<code>Lee</code>模型，该模型中相变量表示为，
@@ -804,6 +806,427 @@ $$</p>
 [\frac{1}{\rho_l} - \alpha_l (\frac{1}{\rho_l}-\frac{1}{\rho_g})] \cdot [S_g \alpha_l +S_l \alpha_g]
 $$</p>
 <p>考虑$S_g$函数表达式，可以看出<code>alphalEqn</code>即为相输运方程。</p>
+<h2 id="表面张力模型">表面张力模型</h2>
+<p>前述中存在的问题<strong>有可能</strong>与表面张力模型的更新有关。表面张力影响速度方程，在<code>UEqn</code>中，速度方程定义为，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">fvVectorMatrix</span> <span class="nf">UEqn</span>
+    <span class="p">(</span>
+        <span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">U</span><span class="p">)</span>
+      <span class="o">+</span> <span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">rhoPhi</span><span class="p">,</span> <span class="n">U</span><span class="p">)</span>
+      <span class="o">+</span> <span class="n">turbulence</span><span class="o">-</span><span class="o">&gt;</span><span class="n">divDevRhoReff</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">U</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="n">UEqn</span><span class="p">.</span><span class="n">relax</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">momentumPredictor</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">solve</span>
+        <span class="p">(</span>
+            <span class="n">UEqn</span>
+         <span class="o">=</span><span class="o">=</span>
+            <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">reconstruct</span>
+            <span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">interface</span><span class="p">.</span><span class="n">surfaceTensionForce</span><span class="p">(</span><span class="p">)</span>
+                  <span class="o">-</span> <span class="n">ghf</span><span class="o">*</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">snGrad</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
+                  <span class="o">-</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">snGrad</span><span class="p">(</span><span class="n">p_rgh</span><span class="p">)</span>
+                <span class="p">)</span> <span class="o">*</span> <span class="n">mesh</span><span class="p">.</span><span class="n">magSf</span><span class="p">(</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>表面张力项为<code>interface.surfaceTensionForce()</code>。对应的动量方程为，
+$$
+\frac{\partial\rho \mathbf U}{\partial t} + \nabla\cdot(\rho\mathbf U \mathbf U)-\nabla\cdot\tau=-\nabla p+\rho\cdot h\nabla\rho +F_\mathrm{st}
+$$
+该求解器使用CSF模型，将表面张力表示为<a href="http://dyfluid.com/interFoam.html">[3]</a>，
+$$
+F_\mathrm{st} = \sigma \kappa \nabla\alpha_l
+$$
+其中，$\sigma$是表面张力系数， $\kappa$ 是界面曲率，
+$$
+\kappa = -\nabla \cdot \mathbf n
+$$</p>
+<p>$$
+\mathbf n = \frac{\nabla\alpha_l }{|\nabla \alpha_l |}
+$$</p>
+<p>$\mathbf n$ 是自由界面的法相。表面张力计算、更新由<code>interfaceProperties</code>类实现，由速度、相分布场构建，其成员变量有</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="c1">// Private data
+</span><span class="c1"></span>
+        <span class="c1">//- Keep a reference to the transportProperties dictionary
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">dictionary</span><span class="o">&amp;</span> <span class="n">transportPropertiesDict_</span><span class="p">;</span>
+
+        <span class="c1">//- Compression coefficient
+</span><span class="c1"></span>        <span class="n">scalar</span> <span class="n">cAlpha_</span><span class="p">;</span>
+
+        <span class="c1">//- Surface tension, \sigma,这里使用了RTS
+</span><span class="c1"></span>        <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">surfaceTensionModel</span><span class="o">&gt;</span> <span class="n">sigmaPtr_</span><span class="p">;</span>
+
+        <span class="c1">//- Stabilisation for normalisation of the interface normal, n
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">dimensionedScalar</span> <span class="n">deltaN_</span><span class="p">;</span>
+				<span class="c1">//- Reference to the field
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">alpha1_</span><span class="p">;</span>
+        <span class="k">const</span> <span class="n">volVectorField</span><span class="o">&amp;</span> <span class="n">U_</span><span class="p">;</span>
+				<span class="c1">// \vec{n}_f
+</span><span class="c1"></span>        <span class="n">surfaceScalarField</span> <span class="n">nHatf_</span><span class="p">;</span>
+				<span class="c1">// curvation, \kappa
+</span><span class="c1"></span>        <span class="n">volScalarField</span> <span class="n">K_</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>主要的成员函数有，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">private</span><span class="o">:</span>
+        <span class="c1">//- Re-calculate the interface curvature
+</span><span class="c1"></span>        <span class="kt">void</span> <span class="n">calculateK</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+<span class="k">public</span><span class="o">:</span>
+        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">sigmaK</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span><span class="p">;</span>
+
+        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">surfaceScalarField</span><span class="o">&gt;</span> <span class="n">surfaceTensionForce</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span><span class="p">;</span>
+        <span class="c1">//- Indicator of the proximity of the interface
+</span><span class="c1"></span>        <span class="c1">//  Field values are 1 near and 0 away for the interface.
+</span><span class="c1"></span>        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">nearInterface</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span><span class="p">;</span>
+
+        <span class="kt">void</span> <span class="nf">correct</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>先看该类的构造函数，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">interfaceProperties</span><span class="o">:</span><span class="o">:</span><span class="n">interfaceProperties</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">alpha1</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">volVectorField</span><span class="o">&amp;</span> <span class="n">U</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">IOdictionary</span><span class="o">&amp;</span> <span class="n">dict</span>
+<span class="p">)</span>
+<span class="o">:</span>
+    <span class="n">transportPropertiesDict_</span><span class="p">(</span><span class="n">dict</span><span class="p">)</span><span class="p">,</span>
+    <span class="n">cAlpha_</span>
+    <span class="p">(</span>
+        <span class="n">alpha1</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">solverDict</span><span class="p">(</span><span class="n">alpha1</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;</span><span class="s">cAlpha</span><span class="s">&#34;</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">,</span>
+
+    <span class="n">sigmaPtr_</span><span class="p">(</span><span class="n">surfaceTensionModel</span><span class="o">:</span><span class="o">:</span><span class="n">New</span><span class="p">(</span><span class="n">dict</span><span class="p">,</span> <span class="n">alpha1</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span><span class="p">,</span>
+
+    <span class="n">deltaN_</span>
+    <span class="p">(</span>
+        <span class="sa"></span><span class="s">&#34;</span><span class="s">deltaN</span><span class="s">&#34;</span><span class="p">,</span>
+        <span class="mf">1e-8</span><span class="o">/</span><span class="n">cbrt</span><span class="p">(</span><span class="n">average</span><span class="p">(</span><span class="n">alpha1</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">,</span>
+
+    <span class="n">alpha1_</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span><span class="p">,</span>
+    <span class="n">U_</span><span class="p">(</span><span class="n">U</span><span class="p">)</span><span class="p">,</span>
+
+    <span class="n">nHatf_</span>
+    <span class="p">(</span>
+        <span class="n">IOobject</span>
+        <span class="p">(</span>
+            <span class="sa"></span><span class="s">&#34;</span><span class="s">nHatf</span><span class="s">&#34;</span><span class="p">,</span>
+            <span class="n">alpha1_</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+            <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span>
+        <span class="p">)</span><span class="p">,</span>
+        <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+        <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimArea</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">,</span>
+
+    <span class="n">K_</span>
+    <span class="p">(</span>
+        <span class="n">IOobject</span>
+        <span class="p">(</span>
+            <span class="sa"></span><span class="s">&#34;</span><span class="s">interfaceProperties:K</span><span class="s">&#34;</span><span class="p">,</span>
+            <span class="n">alpha1_</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+            <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span>
+        <span class="p">)</span><span class="p">,</span>
+        <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+        <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimless</span><span class="o">/</span><span class="n">dimLength</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">calculateK</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>考虑<code>creatFields.H</code>中本例的构建，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">Creating temperaturePhaseChangeTwoPhaseMixture</span><span class="se">\n</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+<span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">temperaturePhaseChangeTwoPhaseMixture</span><span class="o">&gt;</span> <span class="n">mixture</span> <span class="o">=</span>
+    <span class="n">temperaturePhaseChangeTwoPhaseMixture</span><span class="o">:</span><span class="o">:</span><span class="n">New</span><span class="p">(</span><span class="n">thermo</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span><span class="p">;</span>
+
+<span class="n">interfaceProperties</span> <span class="nf">interface</span>
+<span class="p">(</span>
+    <span class="n">alpha1</span><span class="p">,</span>
+    <span class="n">U</span><span class="p">,</span>
+    <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">transportPropertiesDict</span><span class="p">(</span><span class="p">)</span>
+<span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>初始构建时使用液相体积分数，速度场，以及混合物类中的输运字典，并调用<code>calculateK()</code>初始化曲率。表面张力系数由New出来的指针返回，可以是定值，也可以是方程拟合。使用方程的派生类目前还未实施，仅能通过编译。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="kt">void</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">interfaceProperties</span><span class="o">:</span><span class="o">:</span><span class="n">calculateK</span><span class="p">(</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="n">fvMesh</span><span class="o">&amp;</span> <span class="n">mesh</span> <span class="o">=</span> <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+    <span class="c1">//离散面法向量
+</span><span class="c1"></span>    <span class="k">const</span> <span class="n">surfaceVectorField</span><span class="o">&amp;</span> <span class="n">Sf</span> <span class="o">=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">Sf</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="c1">// Cell gradient of alpha
+</span><span class="c1"></span>    <span class="k">const</span> <span class="n">volVectorField</span> <span class="nf">gradAlpha</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">grad</span><span class="p">(</span><span class="n">alpha1_</span><span class="p">,</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">nHat</span><span class="s">&#34;</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+  
+    <span class="c1">// Interpolated face-gradient of alpha
+</span><span class="c1"></span>    <span class="n">surfaceVectorField</span> <span class="nf">gradAlphaf</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">gradAlpha</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+		<span class="c1">// \nabla n_f / | \nabla n_f |
+</span><span class="c1"></span>    <span class="n">surfaceVectorField</span> <span class="nf">nHatfv</span><span class="p">(</span><span class="n">gradAlphaf</span><span class="o">/</span><span class="p">(</span><span class="n">mag</span><span class="p">(</span><span class="n">gradAlphaf</span><span class="p">)</span> <span class="o">+</span> <span class="n">deltaN_</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">correctContactAngle</span><span class="p">(</span><span class="n">nHatfv</span><span class="p">.</span><span class="n">boundaryFieldRef</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">gradAlphaf</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="c1">// Face unit interface normal flux
+</span><span class="c1"></span>    <span class="n">nHatf_</span> <span class="o">=</span> <span class="n">nHatfv</span> <span class="o">&amp;</span> <span class="n">Sf</span><span class="p">;</span>
+
+    <span class="c1">// Simple expression for curvature
+</span><span class="c1"></span>    <span class="n">K_</span> <span class="o">=</span> <span class="o">-</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">nHatf_</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里有一个容易误解的地方，<code>nHatfv</code>即是面上插值的自由界面法向，得到后再进行<code>fvm::div</code>才得到曲率。这里的<code>div</code>不是求散度，而是求和<a href="http://xiaopingqiu.github.io/2015/05/17/OpenFOAMcode1/">[4]</a> <a href="%5Bhttp://www.cfd-china.com/topic/1474/openfoam%E5%AF%B9%E6%A0%87%E9%87%8F%E6%B1%82%E6%95%A3%E5%BA%A6/3%5D(http://www.cfd-china.com/topic/1474/openfoam%E5%AF%B9%E6%A0%87%E9%87%8F%E6%B1%82%E6%95%A3%E5%BA%A6/3)">[5]</a>，
+$$
+\sum_f \mathbf n_f \cdot S_f = \oint_{\partial V} \mathbf n \cdot dS = \int_V \mathbf n dV
+$$
+计算出曲率后，表面张力有<code>surfaceTensionForce()</code>计算，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">surfaceScalarField</span><span class="o">&gt;</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">interfaceProperties</span><span class="o">:</span><span class="o">:</span><span class="n">surfaceTensionForce</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">sigmaK</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="o">*</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">snGrad</span><span class="p">(</span><span class="n">alpha1_</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>求解中每一步后调用<code>correct()</code>对表面张力进行修正，其实就是重新计算界面曲率。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="kt">void</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">interfaceProperties</span><span class="o">:</span><span class="o">:</span><span class="n">correct</span><span class="p">(</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">calculateK</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>除此之外，考虑边界条件对表面张力的修正及接触角计算等这里不再赘述。</p>
+<h2 id="混合物物性">混合物物性</h2>
+<p>这一部分写的比较乱，官方很多函数还没有写完。密度、比热容、热导率、热扩散系数和内能均有相系数加权求和得到。能量方程中求解的是内能，得到内能场后反推温度场，温度与内能的关系为，
+$$
+e = (\alpha_1\rho_1e_1 + \alpha_2\rho_2e_2) / (\alpha_1\rho_1 + \alpha_2\rho_2)
+$$
+其中，
+$$
+e_1 = Cv_1(T - T_\mathrm{sat}) + Hv_1
+$$</p>
+<p>$$
+e_2 = Cv_2(T - T_\mathrm{sat}) + Hv_2
+$$</p>
+<p>因此，温度场计算为
+$$
+T =
+\frac{
+e (\alpha_1\rho_1 + \alpha_2\rho_2)
+-  (\alpha_1\rho_1Hv_1 + \alpha_2\rho_2Hv_2)
+}
+{\alpha_1\rho_1*Cv_1 + \alpha_2\rho_2Cv_2}
++ T_\mathrm{sat};
+$$</p>
+<p>对应在<code>twoPhaseMixtureEThremo::correct()</code>中，定义为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">T_</span> <span class="o">=</span>
+        <span class="p">(</span>
+            <span class="p">(</span><span class="n">e_</span><span class="o">*</span><span class="p">(</span><span class="n">alpha1Rho1</span> <span class="o">+</span> <span class="n">alpha2Rho2</span><span class="p">)</span><span class="p">)</span>
+         <span class="o">-</span>  <span class="p">(</span><span class="n">alpha1Rho1</span><span class="o">*</span><span class="n">Hf1</span><span class="p">(</span><span class="p">)</span> <span class="o">+</span> <span class="n">alpha2Rho2</span><span class="o">*</span><span class="n">Hf2</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+        <span class="p">)</span>
+       <span class="o">/</span><span class="p">(</span><span class="n">alpha1Rho1</span><span class="o">*</span><span class="n">Cv1</span><span class="p">(</span><span class="p">)</span> <span class="o">+</span> <span class="n">alpha2Rho2</span><span class="o">*</span><span class="n">Cv2</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+       <span class="o">+</span> <span class="n">TSat_</span><span class="p">;</span>
+
+    <span class="n">T</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">correctBoundaryConditions</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>至此，该求解器中重要的部分就大体分析完了。</p>
     </div>
 
     <div class="post-copyright">

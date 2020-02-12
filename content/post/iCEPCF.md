@@ -253,7 +253,7 @@ $$
 $$
 而考虑到相变的相输运方程为，
 $$
-\frac{\partial \alpha_l}{\partial t} + \nabla \cdot (\alpha_l \bold{U}) =\alpha_l\nabla\cdot\bold{U}-\alpha_l \left ( \frac{\dot{m}}{\rho_l}- \frac{\dot{m}}{\rho_v} \right ) + \frac{\dot{m}}{\rho_l}
+\frac{\partial \alpha_l}{\partial t} + \nabla \cdot (\alpha_l \mathbf U) =\alpha_l\nabla\cdot\mathbf U-\alpha_l \left ( \frac{\dot{m}}{\rho_l}- \frac{\dot{m}}{\rho_v} \right ) + \frac{\dot{m}}{\rho_l}
 $$
 右侧前两项在不可压流体中为0，计算时增加可以提高数值稳定性。MULES对该方程有进一步的修正，并没有直接体现在这个方程内。
 
@@ -418,3 +418,264 @@ $$
 
 考虑$S_g$函数表达式，可以看出`alphalEqn`即为相输运方程。
 
+## 表面张力模型
+
+前述中存在的问题**有可能**与表面张力模型的更新有关。表面张力影响速度方程，在`UEqn`中，速度方程定义为，
+
+```c++
+fvVectorMatrix UEqn
+    (
+        fvm::ddt(rho, U)
+      + fvm::div(rhoPhi, U)
+      + turbulence->divDevRhoReff(rho, U)
+    );
+
+    UEqn.relax();
+
+    if (pimple.momentumPredictor())
+    {
+        solve
+        (
+            UEqn
+         ==
+            fvc::reconstruct
+            (
+                (
+                    interface.surfaceTensionForce()
+                  - ghf*fvc::snGrad(rho)
+                  - fvc::snGrad(p_rgh)
+                ) * mesh.magSf()
+            )
+        );
+    }
+```
+
+表面张力项为`interface.surfaceTensionForce()`。对应的动量方程为，
+$$
+\frac{\partial\rho \mathbf U}{\partial t} + \nabla\cdot(\rho\mathbf U \mathbf U)-\nabla\cdot\tau=-\nabla p+\rho\cdot h\nabla\rho +F_\mathrm{st}
+$$
+该求解器使用CSF模型，将表面张力表示为[[3]](http://dyfluid.com/interFoam.html)，
+$$
+F_\mathrm{st} = \sigma \kappa \nabla\alpha_l
+$$
+其中，$\sigma$是表面张力系数， $\kappa$ 是界面曲率，
+$$
+\kappa = -\nabla \cdot \mathbf n
+$$
+
+$$
+\mathbf n = \frac{\nabla\alpha_l }{|\nabla \alpha_l |}
+$$
+
+$\mathbf n$ 是自由界面的法相。表面张力计算、更新由`interfaceProperties`类实现，由速度、相分布场构建，其成员变量有
+
+```c++
+    // Private data
+
+        //- Keep a reference to the transportProperties dictionary
+        const dictionary& transportPropertiesDict_;
+
+        //- Compression coefficient
+        scalar cAlpha_;
+
+        //- Surface tension, \sigma,这里使用了RTS
+        autoPtr<surfaceTensionModel> sigmaPtr_;
+
+        //- Stabilisation for normalisation of the interface normal, n
+        const dimensionedScalar deltaN_;
+				//- Reference to the field
+        const volScalarField& alpha1_;
+        const volVectorField& U_;
+				// \vec{n}_f
+        surfaceScalarField nHatf_;
+				// curvation, \kappa
+        volScalarField K_;
+```
+
+主要的成员函数有，
+
+```c++
+private:
+        //- Re-calculate the interface curvature
+        void calculateK();
+public:
+        tmp<volScalarField> sigmaK() const;
+
+        tmp<surfaceScalarField> surfaceTensionForce() const;
+        //- Indicator of the proximity of the interface
+        //  Field values are 1 near and 0 away for the interface.
+        tmp<volScalarField> nearInterface() const;
+
+        void correct();
+```
+
+先看该类的构造函数，
+
+```c++
+Foam::interfaceProperties::interfaceProperties
+(
+    const volScalarField& alpha1,
+    const volVectorField& U,
+    const IOdictionary& dict
+)
+:
+    transportPropertiesDict_(dict),
+    cAlpha_
+    (
+        alpha1.mesh().solverDict(alpha1.name()).get<scalar>("cAlpha")
+    ),
+
+    sigmaPtr_(surfaceTensionModel::New(dict, alpha1.mesh())),
+
+    deltaN_
+    (
+        "deltaN",
+        1e-8/cbrt(average(alpha1.mesh().V()))
+    ),
+
+    alpha1_(alpha1),
+    U_(U),
+
+    nHatf_
+    (
+        IOobject
+        (
+            "nHatf",
+            alpha1_.time().timeName(),
+            alpha1_.mesh()
+        ),
+        alpha1_.mesh(),
+        dimensionedScalar(dimArea, Zero)
+    ),
+
+    K_
+    (
+        IOobject
+        (
+            "interfaceProperties:K",
+            alpha1_.time().timeName(),
+            alpha1_.mesh()
+        ),
+        alpha1_.mesh(),
+        dimensionedScalar(dimless/dimLength, Zero)
+    )
+{
+    calculateK();
+}
+```
+
+考虑`creatFields.H`中本例的构建，
+
+```c++
+Info<< "Creating temperaturePhaseChangeTwoPhaseMixture\n" << endl;
+autoPtr<temperaturePhaseChangeTwoPhaseMixture> mixture =
+    temperaturePhaseChangeTwoPhaseMixture::New(thermo(), mesh);
+
+interfaceProperties interface
+(
+    alpha1,
+    U,
+    thermo->transportPropertiesDict()
+);
+```
+
+初始构建时使用液相体积分数，速度场，以及混合物类中的输运字典，并调用`calculateK()`初始化曲率。表面张力系数由New出来的指针返回，可以是定值，也可以是方程拟合。使用方程的派生类目前还未实施，仅能通过编译。
+
+```c++
+void Foam::interfaceProperties::calculateK()
+{
+    const fvMesh& mesh = alpha1_.mesh();
+    //离散面法向量
+    const surfaceVectorField& Sf = mesh.Sf();
+
+    // Cell gradient of alpha
+    const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
+  
+    // Interpolated face-gradient of alpha
+    surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
+		// \nabla n_f / | \nabla n_f |
+    surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
+
+    correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryField());
+
+    // Face unit interface normal flux
+    nHatf_ = nHatfv & Sf;
+
+    // Simple expression for curvature
+    K_ = -fvc::div(nHatf_);
+}
+```
+
+这里有一个容易误解的地方，`nHatfv`即是面上插值的自由界面法向，得到后再进行`fvm::div`才得到曲率。这里的`div`不是求散度，而是求和[[4]](http://xiaopingqiu.github.io/2015/05/17/OpenFOAMcode1/) [[5]]([http://www.cfd-china.com/topic/1474/openfoam%E5%AF%B9%E6%A0%87%E9%87%8F%E6%B1%82%E6%95%A3%E5%BA%A6/3](http://www.cfd-china.com/topic/1474/openfoam对标量求散度/3))，
+$$
+\sum_f \mathbf n_f \cdot S_f = \oint_{\partial V} \mathbf n \cdot dS = \int_V \mathbf n dV
+$$
+计算出曲率后，表面张力有`surfaceTensionForce()`计算，
+
+```c++
+Foam::tmp<Foam::surfaceScalarField>
+Foam::interfaceProperties::surfaceTensionForce() const
+{
+    return fvc::interpolate(sigmaK())*fvc::snGrad(alpha1_);
+}
+```
+
+求解中每一步后调用`correct()`对表面张力进行修正，其实就是重新计算界面曲率。
+
+```c++
+void Foam::interfaceProperties::correct()
+{
+    calculateK();
+}
+```
+
+除此之外，考虑边界条件对表面张力的修正及接触角计算等这里不再赘述。
+
+
+
+## 混合物物性
+
+这一部分写的比较乱，官方很多函数还没有写完。密度、比热容、热导率、热扩散系数和内能均有相系数加权求和得到。能量方程中求解的是内能，得到内能场后反推温度场，温度与内能的关系为，
+$$
+e = (\alpha_1\rho_1e_1 + \alpha_2\rho_2e_2) / (\alpha_1\rho_1 + \alpha_2\rho_2)
+$$
+其中，
+$$
+e_1 = Cv_1(T - T_\mathrm{sat}) + Hv_1
+$$
+
+$$
+e_2 = Cv_2(T - T_\mathrm{sat}) + Hv_2
+$$
+
+
+
+因此，温度场计算为
+$$
+T =
+        \frac{
+            e (\alpha_1\rho_1 + \alpha_2\rho_2)
+         -  (\alpha_1\rho_1Hv_1 + \alpha_2\rho_2Hv_2)
+       }
+       {\alpha_1\rho_1*Cv_1 + \alpha_2\rho_2Cv_2}
+       + T_\mathrm{sat};
+$$
+
+
+对应在`twoPhaseMixtureEThremo::correct()`中，定义为：
+
+```c++
+    T_ =
+        (
+            (e_*(alpha1Rho1 + alpha2Rho2))
+         -  (alpha1Rho1*Hf1() + alpha2Rho2*Hf2())
+        )
+       /(alpha1Rho1*Cv1() + alpha2Rho2*Cv2())
+       + TSat_;
+
+    T().correctBoundaryConditions();
+```
+
+
+
+至此，该求解器中重要的部分就大体分析完了。
