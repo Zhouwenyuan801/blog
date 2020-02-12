@@ -1,7 +1,7 @@
 ---
-title: "{{ replace .TranslationBaseName "-" " " | title }}"
-date: {{ .Date }}
-lastmod: {{ .Date }}
+title: "ICEPCF"
+date: 2020-02-12T16:44:32+08:00
+lastmod: 2020-02-12T16:44:32+08:00
 draft: false
 keywords: ["un","specified"]
 description: "There's no description"
