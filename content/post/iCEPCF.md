@@ -41,7 +41,7 @@ typora-copy-images-to: ipic
 
 
 
-## 主文件 interCondensatingEvaporatingFoam.C
+## 主文件
 
 该求解器引用的头文件如下，除必要的引用外，还有界面属性类、热物性类和相变混合物体系类的引用。
 
@@ -63,7 +63,7 @@ typora-copy-images-to: ipic
 
 ```c++
 {
-  	#include "postProcess.H"
+  #include "postProcess.H"
     #include "addCheckCaseOptions.H"
     #include "setRootCaseLists.H"
     #include "createTime.H"
@@ -140,9 +140,281 @@ typora-copy-images-to: ipic
 - 蒸发冷凝模型的耦合
 - 表面张力模型
 
-下面将分别分析。
+下面将分别分析上述内容。
 
 ## 相变模型分析
 
+本求解器的近亲`interPhaseChangeFoam`处理的是空化过程中的相变，这里处理的是由热量传递引起的相变。
 
+相较空化，除同样关注压力外，界面附近的温度也是模型的重要参量。本求解器的相变过程由`temperaturePhaseChangeTwoPhaseMixture`类处理。先分析该类的头文件。
+
+```c++
+    //- Runtime type information,作为父类
+    TypeName("temperaturePhaseChangeTwoPhaseMixture");
+
+    // Declare run-time constructor selection table，构建RTS表，key值为模型名，value为指针
+        declareRunTimeSelectionTable
+        (
+            autoPtr,
+            temperaturePhaseChangeTwoPhaseMixture,
+            components,
+            (
+                const thermoIncompressibleTwoPhaseMixture& mixture,
+                const fvMesh& mesh
+            ),
+            (mixture, mesh)
+        );
+
+    // Selectors
+
+        //- Return a reference to the selected phaseChange model，New函数接受两个参数
+        static autoPtr<temperaturePhaseChangeTwoPhaseMixture> New
+        (
+            const thermoIncompressibleTwoPhaseMixture& mixture,
+            const fvMesh& mesh
+        );
+```
+
+选择器的实现为，
+
+```c++
+Foam::autoPtr<Foam::temperaturePhaseChangeTwoPhaseMixture>  #返回指向相变模型的指针
+Foam::temperaturePhaseChangeTwoPhaseMixture::New
+(
+    const thermoIncompressibleTwoPhaseMixture& thermo,
+    const fvMesh& mesh
+)
+{
+    IOdictionary phaseChangePropertiesDict    #读取constant目录下的phaseChangeProperties
+    (
+        IOobject
+        (
+            "phaseChangeProperties",
+            mesh.time().constant(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE,
+            false
+        )
+    );
+
+    const word modelType   #读取相变模型字符串
+    (
+        phaseChangePropertiesDict.get<word>("phaseChangeTwoPhaseModel")
+    );
+
+    Info<< "Selecting phaseChange model " << modelType << endl;
+
+    auto cstrIter = componentsConstructorTablePtr_->cfind(modelType); #在表中寻找对应key值
+
+    if (!cstrIter.found()) #若没有输出表中所有key值
+    {
+        FatalErrorInFunction
+            << "Unknown temperaturePhaseChangeTwoPhaseMixture type "
+            << modelType << nl << nl
+            << "Valid temperaturePhaseChangeTwoPhaseMixture types :" << endl
+            << componentsConstructorTablePtr_->sortedToc()
+            << exit(FatalError);
+    }
+
+    return autoPtr<temperaturePhaseChangeTwoPhaseMixture>
+        (cstrIter()(thermo, mesh));
+}
+```
+
+关于RTS，有几篇博客写的很好[[1]](http://xiaopingqiu.github.io/2016/03/12/RTS1/)[[2]](https://marinecfd.xyz/post/openfoam-runtime-selection/)，本有一篇英文文章更详细些，可惜站点挂掉了。
+
+该类内关于相变的函数如下，英文本身的注释很不清晰，这里按我的理解重新解释，
+
+```c++
+//相方程中质量传递源项，纯虚
+virtual Pair<tmp<volScalarField>> mDotAlphal() const = 0;
+//相变模型直接计算得到的相变速率，kg/m^3，在压力方程中使用，纯虚
+virtual Pair<tmp<volScalarField>> mDot() const = 0;
+//没弄懂
+virtual Pair<tmp<volScalarField>> mDotDeltaT() const = 0;
+//对mDotAlphal包装
+Pair<tmp<volScalarField>> vDotAlphal() const;
+//对mDot包装
+Pair<tmp<volScalarField>> vDot() const;
+//更新相变场
+virtual void correct() = 0;
+//读取相关参数
+virtual bool read();
+```
+
+
+
+理解该模型需要从PISO算法和相方程开始：
+
+在PISO算法中，压力修正方程右侧原本为0，但因为质量守恒方程有源项，所以方程更新为，
+$$
+\sum_{f\in\partial \Omega_i}\left ( \frac{1}{A_P}\right )\left ( \nabla^\perp_f p^{m+1}_d\right ) |S_f| - \sum_{f\in\partial \Omega_i} \phi^r_f = \frac{\dot{m}}{\rho_l}- \frac{\dot{m}}{\rho_v}
+$$
+而考虑到相变的相输运方程为，
+$$
+\frac{\partial \alpha_l}{\partial t} + \nabla \cdot (\alpha_l \bold{U}) =\alpha_l\nabla\cdot\bold{U}-\alpha_l \left ( \frac{\dot{m}}{\rho_l}- \frac{\dot{m}}{\rho_v} \right ) + \frac{\dot{m}}{\rho_l}
+$$
+右侧前两项在不可压流体中为0，计算时增加可以提高数值稳定性。MULES对该方程有进一步的修正，并没有直接体现在这个方程内。
+
+以派生类`constant`为例介绍该模型的求解过程。`constant`类实际即为`Lee`模型，该模型中相变量表示为，
+$$
+\dot{m}_l=r_e\alpha_l\rho_l\frac{T-T_\mathrm{sat}}{T_\mathrm{sat}}
+$$
+`constant`中`mDot()`函数定义为，
+
+```c++
+Foam::Pair<Foam::tmp<Foam::volScalarField>>
+Foam::temperaturePhaseChangeTwoPhaseMixtures::constant::mDot() const
+{
+
+    volScalarField limitedAlpha1
+    (
+        min(max(mixture_.alpha1(), scalar(0)), scalar(1))
+    );
+
+    volScalarField limitedAlpha2
+    (
+        min(max(mixture_.alpha2(), scalar(0)), scalar(1))
+    );
+
+    const volScalarField& T = mesh_.lookupObject<volScalarField>("T");
+
+    const twoPhaseMixtureEThermo& thermo =
+        refCast<const twoPhaseMixtureEThermo>
+        (
+            mesh_.lookupObject<basicThermo>(basicThermo::dictName)
+        );
+
+    const dimensionedScalar& TSat = thermo.TSat();
+
+    const dimensionedScalar T0(dimTemperature, Zero);
+
+    return Pair<tmp<volScalarField>>
+    (
+        coeffC_*mixture_.rho2()*limitedAlpha2*max(TSat - T.oldTime(), T0),
+        coeffE_*mixture_.rho1()*limitedAlpha1*max(T.oldTime() - TSat, T0)
+    );
+}
+```
+
+这里将饱和温度同时考虑进系数中，关于该类模型变种太多，这里不赘述。与`mDot()`类似的`mDotAlphal()`函数内容为，
+
+```c++
+Foam::Pair<Foam::tmp<Foam::volScalarField>>
+Foam::temperaturePhaseChangeTwoPhaseMixtures::constant::mDotAlphal() const
+{
+    const volScalarField& T = mesh_.lookupObject<volScalarField>("T");
+
+    const twoPhaseMixtureEThermo& thermo =
+        refCast<const twoPhaseMixtureEThermo>
+        (
+            mesh_.lookupObject<basicThermo>(basicThermo::dictName)
+        );
+
+    const dimensionedScalar& TSat = thermo.TSat();
+
+    const dimensionedScalar T0(dimTemperature, Zero);
+
+    return Pair<tmp<volScalarField>>
+    (
+        coeffC_*mixture_.rho2()*max(TSat - T.oldTime(), T0),
+       -coeffE_*mixture_.rho1()*max(T.oldTime() - TSat, T0)
+    );
+}
+```
+
+该函数相较`mDot()`仅少了对应相的质量分数，并且蒸发项多了负号。初看十分不理解，要在具体方程中还原才能看清。在`alphaEqn.H`和`pEqn.H`中，相方程和压力修正方程定义为，
+
+```c++
+Pair<tmp<volScalarField>> vDotAlphal =
+        mixture->vDotAlphal();
+    const volScalarField& vDotcAlphal = vDotAlphal[0]();
+    const volScalarField& vDotvAlphal = vDotAlphal[1]();
+    const volScalarField vDotvmcAlphal(vDotvAlphal - vDotcAlphal);
+
+    tmp<surfaceScalarField> talphaPhi;
+
+    if (MULESCorr)
+    {
+        fvScalarMatrix alpha1Eqn
+        (
+            fv::EulerDdtScheme<scalar>(mesh).fvmDdt(alpha1)
+          + fv::gaussConvectionScheme<scalar>
+            (
+                mesh,
+                phi,
+                upwind<scalar>(mesh, phi)
+            ).fvmDiv(phi, alpha1)
+          - fvm::Sp(divU, alpha1)
+         ==
+            fvm::Sp(vDotvmcAlphal, alpha1)
+          + vDotcAlphal
+        );
+```
+
+```c++
+    Pair<tmp<volScalarField>> vDot = mixture->vDot();
+    const volScalarField& vDotc = vDot[0]();
+    const volScalarField& vDotv = vDot[1]();
+
+        fvScalarMatrix p_rghEqn
+        (
+            fvc::div(phiHbyA)
+          - fvm::laplacian(rAUf, p_rgh)
+          - (vDotc - vDotv)
+        );
+```
+
+回看`vDot()`和`vDotAlphal()`的定义，
+
+```c++
+Foam::Pair<Foam::tmp<Foam::volScalarField>>
+Foam::temperaturePhaseChangeTwoPhaseMixture::vDot() const
+{
+    dimensionedScalar pCoeff(1.0/mixture_.rho1() - 1.0/mixture_.rho2());
+    Pair<tmp<volScalarField>> mDot = this->mDot();
+
+    return Pair<tmp<volScalarField>>(pCoeff*mDot[0], pCoeff*mDot[1]);
+}
+
+Foam::Pair<Foam::tmp<Foam::volScalarField>>
+Foam::temperaturePhaseChangeTwoPhaseMixture::vDotAlphal() const
+{
+    volScalarField alphalCoeff
+    (
+        1.0/mixture_.rho1() - mixture_.alpha1()
+       *(1.0/mixture_.rho1() - 1.0/mixture_.rho2())
+    );
+
+    Pair<tmp<volScalarField>> mDotAlphal = this->mDotAlphal();
+
+    return Pair<tmp<volScalarField>>
+    (
+        alphalCoeff*mDotAlphal[0],
+        alphalCoeff*mDotAlphal[1]
+    );
+}
+```
+
+较易理解的事压力方程，因为$\dot{m}=\mathrm{mDot[0]-mDot[1]}$，`pEqn`即为方程（1）
+
+而带入表达式，`alphalEqn`右侧为
+$$
+\mathrm{fvm::Sp(vDotvmcAlphal, alpha1) + vDotcAlphal} 
+$$
+
+$$
+[\frac{1}{\rho_l} - \alpha_l (\frac{1}{\rho_l}-\frac{1}{\rho_g})]\cdot (S_g -S_l )\cdot \alpha_l +[\frac{1}{\rho_l} - \alpha_l (\frac{1}{\rho_l}-\frac{1}{\rho_g})]\cdot S_l
+$$
+
+$$
+[\frac{1}{\rho_l} - \alpha_l (\frac{1}{\rho_l}-\frac{1}{\rho_g})] \cdot [(S_g -S_l)\alpha_l +S_l]
+$$
+
+$$
+[\frac{1}{\rho_l} - \alpha_l (\frac{1}{\rho_l}-\frac{1}{\rho_g})] \cdot [S_g \alpha_l +S_l \alpha_g]
+$$
+
+考虑$S_g$函数表达式，可以看出`alphalEqn`即为相输运方程。
 
