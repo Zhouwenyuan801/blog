@@ -39,7 +39,7 @@ git commit -m "$msg1"
 
 # 推送到githu
 # nusr.github.io 只能使用 master分支
-git push -f git@github.com:nusr/zuozqi.github.io.git master
+git push -f git@github.com:zuozqi/zuozqi.github.io.git master
 
 # 回到原文件夹
 cd ..
