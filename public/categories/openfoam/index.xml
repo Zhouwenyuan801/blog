@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>unarchieved on MrZZQi&#39;s Blog</title>
-    <link>http://localhost:1313/categories/unarchieved/</link>
-    <description>Recent content in unarchieved on MrZZQi&#39;s Blog</description>
+    <title>OpenFOAM on MrZZQi&#39;s Blog</title>
+    <link>http://localhost:1313/categories/openfoam/</link>
+    <description>Recent content in OpenFOAM on MrZZQi&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <lastBuildDate>Wed, 12 Feb 2020 16:44:32 +0800</lastBuildDate>
     
-	<atom:link href="http://localhost:1313/categories/unarchieved/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://localhost:1313/categories/openfoam/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>ICEPCF</title>
+      <title>interCondensatingEvaporatingFoam笔记</title>
       <link>http://localhost:1313/post/icepcf/</link>
       <pubDate>Wed, 12 Feb 2020 16:44:32 +0800</pubDate>
       

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>ICEPCF - MrZZQi&#39;s Blog</title>
+  <title>interCondensatingEvaporatingFoam笔记 - MrZZQi&#39;s Blog</title>
   <meta name="renderer" content="webkit" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 
@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="ZZQ" /><meta name="description" content="There&#39;s no description" /><meta name="keywords" content="un, specified" />
+<meta name="author" content="ZZQ" /><meta name="description" content="OpenFOAM中蒸发冷凝求解器笔记" /><meta name="keywords" content="E&C, OpenFOAM" />
 
 
 
@@ -38,23 +38,23 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
-<meta property="og:title" content="ICEPCF" />
-<meta property="og:description" content="There&#39;s no description" />
+<meta property="og:title" content="interCondensatingEvaporatingFoam笔记" />
+<meta property="og:description" content="OpenFOAM中蒸发冷凝求解器笔记" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://localhost:1313/post/icepcf/" />
 <meta property="article:published_time" content="2020-02-12T16:44:32+08:00" />
 <meta property="article:modified_time" content="2020-02-12T16:44:32+08:00" />
-<meta itemprop="name" content="ICEPCF">
-<meta itemprop="description" content="There&#39;s no description">
+<meta itemprop="name" content="interCondensatingEvaporatingFoam笔记">
+<meta itemprop="description" content="OpenFOAM中蒸发冷凝求解器笔记">
 <meta itemprop="datePublished" content="2020-02-12T16:44:32&#43;08:00" />
 <meta itemprop="dateModified" content="2020-02-12T16:44:32&#43;08:00" />
-<meta itemprop="wordCount" content="412">
+<meta itemprop="wordCount" content="1330">
 
 
 
-<meta itemprop="keywords" content="no-tag," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="ICEPCF"/>
-<meta name="twitter:description" content="There&#39;s no description"/>
+<meta itemprop="keywords" content="E&amp;C,OpenFOAM,code," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="interCondensatingEvaporatingFoam笔记"/>
+<meta name="twitter:description" content="OpenFOAM中蒸发冷凝求解器笔记"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -117,15 +117,15 @@
           <article class="post">
     
     <header class="post-header">
-      <h1 class="post-title">ICEPCF</h1>
+      <h1 class="post-title">interCondensatingEvaporatingFoam笔记</h1>
 
       <div class="post-meta">
         <span class="post-time"> Wednesday, February 12, 2020 </span>
         <div class="post-category">
-            <a href="/categories/unarchieved/"> unarchieved </a>
+            <a href="/categories/openfoam/"> OpenFOAM </a>
             </div>
-          <span class="more-meta"> 412 words </span>
-          <span class="more-meta"> 1 min read </span>
+          <span class="more-meta"> 1330 words </span>
+          <span class="more-meta"> 3 mins read </span>
         
       </div>
     </header>
@@ -133,15 +133,60 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">Contents</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#总览">总览</a></li>
+    <li><a href="#主文件-intercondensatingevaporatingfoamc">主文件 interCondensatingEvaporatingFoam.C</a></li>
+    <li><a href="#相变模型分析">相变模型分析</a></li>
+  </ul>
+</nav>
   </div>
 </div>
     <div class="post-content">
-      <p>试试公式功能，$Q_n$，
-$$
-S_h \times \underbrace{\nabla\cdot \vec{U}}_{convection} = Q
-$$</p>
-<p>试试代码功能</p>
+      <h2 id="总览">总览</h2>
+<p><code>interCondensatingEvaporatingFoam</code>是自ESI-OpenCFD发布的<code>OpenFOAM-1806</code>版本以来新增的求解器，其描述为：</p>
+<blockquote>
+<p>​    Solver for two incompressible, non-isothermal immiscible fluids with</p>
+<p>​    phase-change (evaporation-condensation) between a fluid and its vapour.</p>
+<p>​    Uses a VOF (volume of fluid) phase-fraction based interface capturing</p>
+<p>​    approach.</p>
+<p>​    The momentum, energy and other fluid properties are of the &ldquo;mixture&rdquo; and a</p>
+<p>​    single momentum equation is solved.</p>
+<p>​    Turbulence modelling is generic, i.e. laminar, RAS or LES may be selected.</p>
+</blockquote>
+<p>其中，相方程的建立与求解与<code>interFoam</code>相同，涉及相变的内容多沿袭自<code>interPhaseChangeFoam</code>。对于蒸发冷凝过程，使用<code>temperaturePhaseChangeTwoPhaseMixture</code>类描述。在该求解器在早期版本（v1806）中，流体表面张力、温度与常温流体相差较大时计算较易发散。在最近的版本（v1912）中，模型中的表面张力模型、能量方程进一步更新，修复了前述问题。因此，该求解器目前已较为完善。遗憾的事，在OpenFOAM Fundation发行的<code>OpenFOAM-6</code>及后续版本中并没有该求解器。好在学校的超算预置的版本是v1812。</p>
+<p>后续将记录分析该求解器的过程，很多内容都是较基础的知识，这部分知识只作简单总结。</p>
+<h2 id="主文件-intercondensatingevaporatingfoamc">主文件 interCondensatingEvaporatingFoam.C</h2>
+<p>该求解器引用的头文件如下，除必要的引用外，还有界面属性类、热物性类和相变混合物体系类的引用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvCFD.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CMULES.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;subCycle.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;interfaceProperties.H&#34;   #界面性质类</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;twoPhaseMixtureEThermo.H&#34;  #热物性类</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;temperaturePhaseChangeTwoPhaseMixture.H&#34; #相变混合物体系类</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulentTransportModel.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulenceModel.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;pimpleControl.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvOptions.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fixedFluxPressureFvPatchScalarField.H&#34;</span><span class="cp">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>主函数为</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt"> 1
@@ -206,24 +251,28 @@ $$</p>
 </span><span class="lnt">60
 </span><span class="lnt">61
 </span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvCFD.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CMULES.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;subCycle.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;interfaceProperties.H&#34;   #界面性质</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;twoPhaseMixtureEThermo.H&#34;  #两相流体热力性质</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;temperaturePhaseChangeTwoPhaseMixture.H&#34; #关于相变模型</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulentTransportModel.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulenceModel.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;pimpleControl.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvOptions.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fixedFluxPressureFvPatchScalarField.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">T</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="p">{</span>
+  	<span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;postProcess.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;addCheckCaseOptions.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;setRootCaseLists.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createTime.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createMesh.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createControl.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createFields.H&#34;  #初始化场</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createFvOptions.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createTimeControls.H&#34; #建立时间序列</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CourantNo.H&#34;</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;setInitialDeltaT.H&#34;</span><span class="cp">
+</span><span class="cp"></span>
+    <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">T</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>  <span class="err">#</span><span class="err">获</span><span class="err">得</span><span class="err">温</span><span class="err">度</span><span class="err">场</span><span class="err">引</span><span class="err">用</span>
     <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">he</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">起</span><span class="err">别</span><span class="err">称</span><span class="err">，</span><span class="err">方</span><span class="err">便</span><span class="err">使</span><span class="err">用</span>
-    <span class="n">e</span><span class="p">.</span><span class="n">oldTime</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="n">create</span> <span class="n">field0Ptr_</span>
+    <span class="n">e</span><span class="p">.</span><span class="n">oldTime</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="n">create</span> <span class="n">field0Ptr_建立时间序列</span>
 
-    <span class="n">turbulence</span><span class="o">-</span><span class="o">&gt;</span><span class="n">validate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span><span class="err">#</span><span class="err">创</span><span class="err">建</span><span class="err">后</span><span class="err">验</span><span class="err">证</span><span class="err">湍</span><span class="err">流</span><span class="err">模</span><span class="err">型</span><span class="err">完</span><span class="err">整</span><span class="err">性</span>
+    <span class="n">turbulence</span><span class="o">-</span><span class="o">&gt;</span><span class="n">validate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">创</span><span class="err">建</span><span class="err">后</span><span class="err">验</span><span class="err">证</span><span class="err">湍</span><span class="err">流</span><span class="err">模</span><span class="err">型</span><span class="err">完</span><span class="err">整</span><span class="err">性</span>
 
     <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="se">\n</span><span class="s">Starting time loop</span><span class="se">\n</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
     <span class="k">while</span> <span class="p">(</span><span class="n">runTime</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
@@ -263,7 +312,7 @@ $$</p>
                 <span class="n">turbulence</span><span class="o">-</span><span class="o">&gt;</span><span class="n">correct</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
             <span class="p">}</span>
         <span class="p">}</span>
-        <span class="n">rho</span> <span class="o">=</span> <span class="n">alpha1</span><span class="o">*</span><span class="n">rho1</span> <span class="o">+</span> <span class="n">alpha2</span><span class="o">*</span><span class="n">rho2</span><span class="p">;</span><span class="err">#</span><span class="err">修</span><span class="err">正</span><span class="err">密</span><span class="err">度</span><span class="err">项</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">alpha1</span><span class="o">*</span><span class="n">rho1</span> <span class="o">+</span> <span class="n">alpha2</span><span class="o">*</span><span class="n">rho2</span><span class="p">;</span> <span class="err">#</span><span class="err">修</span><span class="err">正</span><span class="err">密</span><span class="err">度</span><span class="err">项</span>
         <span class="n">runTime</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
         <span class="n">runTime</span><span class="p">.</span><span class="n">printExecutionTime</span><span class="p">(</span><span class="n">Info</span><span class="p">)</span><span class="p">;</span>
     <span class="p">}</span>
@@ -272,8 +321,17 @@ $$</p>
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>图片，</p>
-<p><img src="https://tva1.sinaimg.cn/large/0082zybply1gbtrgreud3j30bu0fi752.jpg" alt="奥利给！"></p>
+</div><p>该求解器构建中比较重要的是<code>temperaturePhaseChangeTwoPhaseMixture</code>类，其负责处理相变量的计算。该类继承自<code>IOdictionary</code>，包含两个成员对象，<code>twoPhaseMixtureEThermo</code>和<code>mesh</code>。</p>
+<p><img src="https://tva1.sinaimg.cn/large/0082zybply1gbtswsmk8tj30x20i4did.jpg" alt="image-20200212183756118"></p>
+<p><code>twoPhaseMixtureEThermo</code>主要包含两相流体的热物性质，<code>mesh</code>包含流场中的网格信息。<code>temperaturePhaseChangeTwoPhaseMixture</code>则将热物理性质映射至网格上。<code>twoPhaseMixtureEThermo</code>继承自<code>basicThermo</code>和<code>thermoIncompressibleTwoPhaseMixture</code>，前者是标准类，包含焓、温度、压力等成员变量，后者包含潜热、比热容、热导率等与传热相关的物性。</p>
+<p>在该求解器中，重要的内容有：</p>
+<ul>
+<li>混合流体物性计算和更新</li>
+<li>蒸发冷凝模型的耦合</li>
+<li>表面张力模型</li>
+</ul>
+<p>下面将分别分析。</p>
+<h2 id="相变模型分析">相变模型分析</h2>
     </div>
 
     <div class="post-copyright">
@@ -293,7 +351,9 @@ $$</p>
 </div>
 <footer class="post-footer">
       <div class="post-tags">
-          <a href="/tags/no-tag/">no-tag</a>
+          <a href="/tags/ec/">E&amp;C</a>
+          <a href="/tags/openfoam/">OpenFOAM</a>
+          <a href="/tags/code/">code</a>
           </div>
       <nav class="post-nav">
         
