@@ -1,2 +1,20 @@
 User-agent: *
-Sitemap: http://localhost:1313/sitemap.xml
+
+
+Disallow: /categories/
+
+Disallow: /tags/code/
+
+Disallow: /tags/ec/
+
+Disallow: /post/icepcf/
+
+Disallow: /
+
+Disallow: /categories/openfoam/
+
+Disallow: /tags/openfoam/
+
+Disallow: /post/
+
+Disallow: /tags/
