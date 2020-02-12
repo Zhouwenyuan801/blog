@@ -16,9 +16,9 @@ author: "ZZQ"
 
 
 
-试试公式功能
+试试公式功能，$Q_n$，
 $$
-S_h \times \underbrace{\nabla\cdot \vec{U}}_{Convection} = Q
+S_h \times \underbrace{\nabla\cdot \vec{U}}_{convection} = Q
 $$
 
 
@@ -89,3 +89,6 @@ volScalarField& T = thermo->T();
 }
 ```
 
+图片，
+
+![奥利给！](https://tva1.sinaimg.cn/large/0082zybply1gbtrgreud3j30bu0fi752.jpg)
