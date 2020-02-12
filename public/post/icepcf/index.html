@@ -48,7 +48,7 @@
 <meta itemprop="description" content="There&#39;s no description">
 <meta itemprop="datePublished" content="2020-02-12T16:44:32&#43;08:00" />
 <meta itemprop="dateModified" content="2020-02-12T16:44:32&#43;08:00" />
-<meta itemprop="wordCount" content="0">
+<meta itemprop="wordCount" content="402">
 
 
 
@@ -124,8 +124,8 @@
         <div class="post-category">
             <a href="/categories/unarchieved/"> unarchieved </a>
             </div>
-          <span class="more-meta"> 0 words </span>
-          <span class="more-meta"> 0 mins read </span>
+          <span class="more-meta"> 402 words </span>
+          <span class="more-meta"> 1 min read </span>
         
       </div>
     </header>
@@ -137,10 +137,159 @@
   </div>
 </div>
     <div class="post-content">
-      
+      <p>试试公式功能
+$$
+S_h \times \underbrace{\nabla\cdot \vec{U}}_{Convection} = Q
+$$</p>
+<p>试试代码功能</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvCFD.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CMULES.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;subCycle.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;interfaceProperties.H&#34;   #界面性质</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;twoPhaseMixtureEThermo.H&#34;  #两相流体热力性质</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;temperaturePhaseChangeTwoPhaseMixture.H&#34; #关于相变模型</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulentTransportModel.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulenceModel.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;pimpleControl.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvOptions.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fixedFluxPressureFvPatchScalarField.H&#34;</span><span class="cp">
+</span><span class="cp"></span><span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">T</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+    <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">he</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">起</span><span class="err">别</span><span class="err">称</span><span class="err">，</span><span class="err">方</span><span class="err">便</span><span class="err">使</span><span class="err">用</span>
+    <span class="n">e</span><span class="p">.</span><span class="n">oldTime</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="n">create</span> <span class="n">field0Ptr_</span>
+
+    <span class="n">turbulence</span><span class="o">-</span><span class="o">&gt;</span><span class="n">validate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span><span class="err">#</span><span class="err">创</span><span class="err">建</span><span class="err">后</span><span class="err">验</span><span class="err">证</span><span class="err">湍</span><span class="err">流</span><span class="err">模</span><span class="err">型</span><span class="err">完</span><span class="err">整</span><span class="err">性</span>
+
+    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="se">\n</span><span class="s">Starting time loop</span><span class="se">\n</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">runTime</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createTimeControls.H&#34;</span><span class="cp">
+</span><span class="cp"></span>        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CourantNo.H&#34; #计算Co数</span><span class="cp">
+</span><span class="cp"></span>        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;setDeltaT.H&#34; #根据Co修正时间步长</span><span class="cp">
+</span><span class="cp"></span>        <span class="o">+</span><span class="o">+</span><span class="n">runTime</span><span class="p">;</span>
+        <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">Time = </span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">runTime</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">nl</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+        <span class="c1">// --- Pressure-velocity PIMPLE corrector loop
+</span><span class="c1"></span>        <span class="k">while</span> <span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">loop</span><span class="p">(</span><span class="p">)</span><span class="p">)</span> <span class="err">#</span><span class="n">PIMPLE循环</span>
+        <span class="p">{</span>
+            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;alphaControls.H&#34;</span><span class="cp">
+</span><span class="cp"></span>            <span class="n">surfaceScalarField</span> <span class="n">rhoPhi</span>  <span class="err">#</span><span class="err">建</span><span class="err">立</span><span class="err">质</span><span class="err">量</span><span class="err">通</span><span class="err">量</span>
+            <span class="p">(</span>
+                <span class="n">IOobject</span>
+                <span class="p">(</span>
+                    <span class="sa"></span><span class="s">&#34;</span><span class="s">rhoPhi</span><span class="s">&#34;</span><span class="p">,</span>
+                    <span class="n">runTime</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="n">mesh</span>
+                <span class="p">)</span><span class="p">,</span>
+                <span class="n">mesh</span><span class="p">,</span>
+                <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimMass</span><span class="o">/</span><span class="n">dimTime</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+            <span class="n">mixture</span><span class="o">-</span><span class="o">&gt;</span><span class="n">correct</span><span class="p">(</span><span class="p">)</span><span class="p">;</span><span class="err">#</span><span class="err">修</span><span class="err">正</span><span class="err">混</span><span class="err">合</span><span class="err">流</span><span class="err">体</span><span class="err">物</span><span class="err">性</span>
+            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;alphaEqnSubCycle.H&#34;</span><span class="cp">
+</span><span class="cp"></span>            <span class="n">solve</span><span class="p">(</span><span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span> <span class="o">+</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">rhoPhi</span><span class="p">)</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">体</span><span class="err">积</span><span class="err">分</span><span class="err">数</span><span class="n">advection</span>
+            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;UEqn.H&#34;  #求解速度</span><span class="cp">
+</span><span class="cp"></span>            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;eEqn.H&#34;  #根据速度修正能量</span><span class="cp">
+</span><span class="cp"></span>            <span class="c1">// --- Pressure corrector loop
+</span><span class="c1"></span>            <span class="k">while</span> <span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">correct</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;pEqn.H&#34;  #压力修正</span><span class="cp">
+</span><span class="cp"></span>            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">turbCorr</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">turbulence</span><span class="o">-</span><span class="o">&gt;</span><span class="n">correct</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">alpha1</span><span class="o">*</span><span class="n">rho1</span> <span class="o">+</span> <span class="n">alpha2</span><span class="o">*</span><span class="n">rho2</span><span class="p">;</span><span class="err">#</span><span class="err">修</span><span class="err">正</span><span class="err">密</span><span class="err">度</span><span class="err">项</span>
+        <span class="n">runTime</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="n">runTime</span><span class="p">.</span><span class="n">printExecutionTime</span><span class="p">(</span><span class="n">Info</span><span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">End</span><span class="se">\n</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
     </div>
 
-    
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">Author</span>
+    <span class="item-content">ZZQ</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">LastMod</span>
+    <span class="item-content">
+        Wednesday, February 12, 2020
+        
+    </span>
+  </p>
+  
+  
+</div>
 <footer class="post-footer">
       <div class="post-tags">
           <a href="/tags/no-tag/">no-tag</a>
@@ -153,6 +302,10 @@
   </article>
         </div>
         
+
+  
+
+  
 
       </div>
     </main>
@@ -202,6 +355,15 @@
     timeago.cancel();  
   </script>
 <script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+  <script type="text/javascript">
+    window.MathJax = {
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+      TeX: {equationNumbers: {autoNumber: "AMS"}},
+      showProcessingMessages: false,
+      messageStyle: 'none'
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"  integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script>
 
 
 
