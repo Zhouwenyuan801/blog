@@ -3,24 +3,26 @@ User-agent: *
 
 Disallow: /categories/
 
-Disallow: /post/loveletter/
+Disallow: /tags/code/
+
+Disallow: /tags/ec/
+
+Disallow: /post/irmif/
 
 Disallow: /
 
-Disallow: /tags/no-tag/
+Disallow: /categories/openfoam/
+
+Disallow: /tags/openfoam/
 
 Disallow: /post/
 
 Disallow: /tags/
 
+Disallow: /post/loveletter/
+
+Disallow: /tags/no-tag/
+
 Disallow: /categories/unarchieved/
 
-Disallow: /tags/code/
-
-Disallow: /tags/ec/
-
 Disallow: /post/icepcf/
-
-Disallow: /tags/openfoam/
-
-Disallow: /categories/openfoam/

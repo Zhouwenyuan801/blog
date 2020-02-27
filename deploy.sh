@@ -18,7 +18,7 @@ fi
 
 hugo -t even # if using a theme, replace with `hugo -t <YOURTHEME>`
 
-python hugo-encryptor.py
+python3 hugo-encryptor.py
 
 git add -A
 git commit -m "$msg0"

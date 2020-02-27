@@ -1,158 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>interCondensatingEvaporatingFoam笔记 - MrZZQi&#39;s Blog</title>
-  <meta name="renderer" content="webkit" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-
-<meta http-equiv="Cache-Control" content="no-transform" />
-<meta http-equiv="Cache-Control" content="no-siteapp" />
-
-<meta name="theme-color" content="#f8f5ec" />
-<meta name="msapplication-navbutton-color" content="#f8f5ec">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
-
-
-<meta name="author" content="ZZQ" /><meta name="description" content="OpenFOAM中蒸发冷凝求解器笔记" /><meta name="keywords" content="E&C, OpenFOAM" />
-
-
-
-
-
-
-<meta name="generator" content="Hugo 0.64.1 with theme even" />
-
-
-<link rel="canonical" href="http://localhost:1313/post/icepcf/" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="manifest" href="/manifest.json">
-<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-
-
-<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
-
-
-<meta property="og:title" content="interCondensatingEvaporatingFoam笔记" />
-<meta property="og:description" content="OpenFOAM中蒸发冷凝求解器笔记" />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="http://localhost:1313/post/icepcf/" />
-<meta property="article:published_time" content="2020-02-12T16:44:32+08:00" />
-<meta property="article:modified_time" content="2020-02-12T16:44:32+08:00" />
-<meta itemprop="name" content="interCondensatingEvaporatingFoam笔记">
-<meta itemprop="description" content="OpenFOAM中蒸发冷凝求解器笔记">
-<meta itemprop="datePublished" content="2020-02-12T16:44:32&#43;08:00" />
-<meta itemprop="dateModified" content="2020-02-12T16:44:32&#43;08:00" />
-<meta itemprop="wordCount" content="4245">
-
-
-
-<meta itemprop="keywords" content="E&amp;C,OpenFOAM,code," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="interCondensatingEvaporatingFoam笔记"/>
-<meta name="twitter:description" content="OpenFOAM中蒸发冷凝求解器笔记"/>
-
+<meta charset="utf-8"/>
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+<title>interCondensatingEvaporatingFoam笔记 - MrZZQi's Blog</title>
+<meta content="webkit" name="renderer"/>
+<meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport"/>
+<meta content="no-transform" http-equiv="Cache-Control"/>
+<meta content="no-siteapp" http-equiv="Cache-Control"/>
+<meta content="#f8f5ec" name="theme-color"/>
+<meta content="#f8f5ec" name="msapplication-navbutton-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="#f8f5ec" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="ZZQ" name="author"/><meta content="OpenFOAM中蒸发冷凝求解器笔记" name="description"/><meta content="E&amp;C, OpenFOAM" name="keywords"/>
+<meta content="Hugo 0.64.1 with theme even" name="generator"/>
+<link href="http://localhost:1313/post/icepcf/" rel="canonical"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet"/>
+<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" rel="stylesheet"/>
+<meta content="interCondensatingEvaporatingFoam笔记" property="og:title"/>
+<meta content="OpenFOAM中蒸发冷凝求解器笔记" property="og:description"/>
+<meta content="article" property="og:type"/>
+<meta content="http://localhost:1313/post/icepcf/" property="og:url"/>
+<meta content="2020-02-12T16:44:32+08:00" property="article:published_time"/>
+<meta content="2020-02-12T16:44:32+08:00" property="article:modified_time"/>
+<meta content="interCondensatingEvaporatingFoam笔记" itemprop="name"/>
+<meta content="OpenFOAM中蒸发冷凝求解器笔记" itemprop="description"/>
+<meta content="2020-02-12T16:44:32+08:00" itemprop="datePublished"/>
+<meta content="2020-02-12T16:44:32+08:00" itemprop="dateModified"/>
+<meta content="4245" itemprop="wordCount"/>
+<meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
+<meta content="interCondensatingEvaporatingFoam笔记" name="twitter:title"/>
+<meta content="OpenFOAM中蒸发冷凝求解器笔记" name="twitter:description"/>
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
 <![endif]-->
-
 <!--[if lt IE 9]>
   <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
 <![endif]-->
-
 </head>
 <body>
-  <div id="mobile-navbar" class="mobile-navbar">
-  <div class="mobile-header-logo">
-    <a href="/" class="logo">MrZZQi&#39;s Blog</a>
-  </div>
-  <div class="mobile-navbar-icon">
-    <span></span>
-    <span></span>
-    <span></span>
-  </div>
+<div class="mobile-navbar" id="mobile-navbar">
+<div class="mobile-header-logo">
+<a class="logo" href="/">MrZZQi's Blog</a>
 </div>
-<nav id="mobile-menu" class="mobile-menu slideout-menu">
-  <ul class="mobile-menu-list">
-    <a href="/">
-        <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
-      </a><a href="/categories/">
-        <li class="mobile-menu-item">Categories</li>
-      </a>
-  </ul>
+<div class="mobile-navbar-icon">
+<span></span>
+<span></span>
+<span></span>
+</div>
+</div>
+<nav class="mobile-menu slideout-menu" id="mobile-menu">
+<ul class="mobile-menu-list">
+<a href="/">
+<li class="mobile-menu-item">Home</li>
+</a><a href="/post/">
+<li class="mobile-menu-item">Archives</li>
+</a><a href="/tags/">
+<li class="mobile-menu-item">Tags</li>
+</a><a href="/categories/">
+<li class="mobile-menu-item">Categories</li>
+</a>
+</ul>
 </nav>
-  <div class="container" id="mobile-panel">
-    <header id="header" class="header">
-        <div class="logo-wrapper">
-  <a href="/" class="logo">MrZZQi&#39;s Blog</a>
+<div class="container" id="mobile-panel">
+<header class="header" id="header">
+<div class="logo-wrapper">
+<a class="logo" href="/">MrZZQi's Blog</a>
 </div>
-
 <nav class="site-navbar">
-  <ul id="menu" class="menu">
-    <li class="menu-item">
-        <a class="menu-item-link" href="/">Home</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
-      </li>
-  </ul>
+<ul class="menu" id="menu">
+<li class="menu-item">
+<a class="menu-item-link" href="/">Home</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/post/">Archives</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/tags/">Tags</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/categories/">Categories</a>
+</li>
+</ul>
 </nav>
-    </header>
-
-    <main id="main" class="main">
-      <div class="content-wrapper">
-        <div id="content" class="content">
-          <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">interCondensatingEvaporatingFoam笔记</h1>
-
-      <div class="post-meta">
-        <span class="post-time"> Wednesday, February 12, 2020 </span>
-        <div class="post-category">
-            <a href="/categories/openfoam/"> OpenFOAM </a>
-            </div>
-          <span class="more-meta"> 4245 words </span>
-          <span class="more-meta"> 9 mins read </span>
-        
-      </div>
-    </header>
-
-    <div class="post-toc" id="post-toc">
-  <h2 class="post-toc-title">Contents</h2>
-  <div class="post-toc-content">
-    <nav id="TableOfContents">
-  <ul>
-    <li><a href="#总览">总览</a></li>
-    <li><a href="#主文件">主文件</a></li>
-    <li><a href="#相变模型分析">相变模型分析</a></li>
-    <li><a href="#表面张力模型">表面张力模型</a></li>
-    <li><a href="#混合物物性">混合物物性</a></li>
-  </ul>
-</nav>
-  </div>
+</header>
+<main class="main" id="main">
+<div class="content-wrapper">
+<div class="content" id="content">
+<article class="post">
+<header class="post-header">
+<h1 class="post-title">interCondensatingEvaporatingFoam笔记</h1>
+<div class="post-meta">
+<span class="post-time"> Wednesday, February 12, 2020 </span>
+<div class="post-category">
+<a href="/categories/openfoam/"> OpenFOAM </a>
 </div>
-    <div class="post-content">
-      <h2 id="总览">总览</h2>
+<span class="more-meta"> 4245 words </span>
+<span class="more-meta"> 9 mins read </span>
+</div>
+</header>
+<div class="post-toc" id="post-toc">
+<h2 class="post-toc-title">Contents</h2>
+<div class="post-toc-content">
+<nav id="TableOfContents">
+<ul>
+<li><a href="#总览">总览</a></li>
+<li><a href="#主文件">主文件</a></li>
+<li><a href="#相变模型分析">相变模型分析</a></li>
+<li><a href="#表面张力模型">表面张力模型</a></li>
+<li><a href="#混合物物性">混合物物性</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<div class="post-content">
+<h2 id="总览">总览</h2>
 <p><code>interCondensatingEvaporatingFoam</code>是自ESI-OpenCFD发布的<code>OpenFOAM-1806</code>版本以来新增的求解器，其描述为：</p>
 <blockquote>
 <p>​    Solver for two incompressible, non-isothermal immiscible fluids with</p>
 <p>​    phase-change (evaporation-condensation) between a fluid and its vapour.</p>
 <p>​    Uses a VOF (volume of fluid) phase-fraction based interface capturing</p>
 <p>​    approach.</p>
-<p>​    The momentum, energy and other fluid properties are of the &ldquo;mixture&rdquo; and a</p>
+<p>​    The momentum, energy and other fluid properties are of the “mixture” and a</p>
 <p>​    single momentum equation is solved.</p>
 <p>​    Turbulence modelling is generic, i.e. laminar, RAS or LES may be selected.</p>
 </blockquote>
@@ -175,17 +147,17 @@
 </span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvCFD.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CMULES.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;subCycle.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;interfaceProperties.H&#34;   #界面性质类</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;twoPhaseMixtureEThermo.H&#34;  #热物性类</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;temperaturePhaseChangeTwoPhaseMixture.H&#34; #相变混合物体系类</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulentTransportModel.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;turbulenceModel.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;pimpleControl.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fvOptions.H&#34;</span><span class="cp">
-</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;fixedFluxPressureFvPatchScalarField.H&#34;</span><span class="cp">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"fvCFD.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"CMULES.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"subCycle.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"interfaceProperties.H"   #界面性质类</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"twoPhaseMixtureEThermo.H"  #热物性类</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"temperaturePhaseChangeTwoPhaseMixture.H" #相变混合物体系类</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"turbulentTransportModel.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"turbulenceModel.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"pimpleControl.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"fvOptions.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"fixedFluxPressureFvPatchScalarField.H"</span><span class="cp">
 </span></code></pre></td></tr></table>
 </div>
 </div><p>主函数为</p>
@@ -258,17 +230,17 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-c++" data-lang="c++"><span class="p">{</span>
-  <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;postProcess.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;addCheckCaseOptions.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;setRootCaseLists.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createTime.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createMesh.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createControl.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createFields.H&#34;  #初始化场</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createFvOptions.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createTimeControls.H&#34; #建立时间序列</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CourantNo.H&#34;</span><span class="cp">
-</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;setInitialDeltaT.H&#34;</span><span class="cp">
+  <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"postProcess.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"addCheckCaseOptions.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"setRootCaseLists.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"createTime.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"createMesh.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"createControl.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"createFields.H"  #初始化场</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"createFvOptions.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"createTimeControls.H" #建立时间序列</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"CourantNo.H"</span><span class="cp">
+</span><span class="cp"></span>    <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"setInitialDeltaT.H"</span><span class="cp">
 </span><span class="cp"></span>
     <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">T</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>  <span class="err">#</span><span class="err">获</span><span class="err">得</span><span class="err">温</span><span class="err">度</span><span class="err">场</span><span class="err">引</span><span class="err">用</span>
     <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">thermo</span><span class="o">-</span><span class="o">&gt;</span><span class="n">he</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">起</span><span class="err">别</span><span class="err">称</span><span class="err">，</span><span class="err">方</span><span class="err">便</span><span class="err">使</span><span class="err">用</span>
@@ -276,23 +248,23 @@
 
     <span class="n">turbulence</span><span class="o">-</span><span class="o">&gt;</span><span class="n">validate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">创</span><span class="err">建</span><span class="err">后</span><span class="err">验</span><span class="err">证</span><span class="err">湍</span><span class="err">流</span><span class="err">模</span><span class="err">型</span><span class="err">完</span><span class="err">整</span><span class="err">性</span>
 
-    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="se">\n</span><span class="s">Starting time loop</span><span class="se">\n</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="se">\n</span><span class="s">Starting time loop</span><span class="se">\n</span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
     <span class="k">while</span> <span class="p">(</span><span class="n">runTime</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;createTimeControls.H&#34;</span><span class="cp">
-</span><span class="cp"></span>        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;CourantNo.H&#34; #计算Co数</span><span class="cp">
-</span><span class="cp"></span>        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;setDeltaT.H&#34; #根据Co修正时间步长</span><span class="cp">
+        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"createTimeControls.H"</span><span class="cp">
+</span><span class="cp"></span>        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"CourantNo.H" #计算Co数</span><span class="cp">
+</span><span class="cp"></span>        <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"setDeltaT.H" #根据Co修正时间步长</span><span class="cp">
 </span><span class="cp"></span>        <span class="o">+</span><span class="o">+</span><span class="n">runTime</span><span class="p">;</span>
-        <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">Time = </span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">runTime</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">nl</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+        <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Time = </span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">runTime</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">nl</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
         <span class="c1">// --- Pressure-velocity PIMPLE corrector loop
 </span><span class="c1"></span>        <span class="k">while</span> <span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">loop</span><span class="p">(</span><span class="p">)</span><span class="p">)</span> <span class="err">#</span><span class="n">PIMPLE循环</span>
         <span class="p">{</span>
-            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;alphaControls.H&#34;</span><span class="cp">
+            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"alphaControls.H"</span><span class="cp">
 </span><span class="cp"></span>            <span class="n">surfaceScalarField</span> <span class="n">rhoPhi</span>  <span class="err">#</span><span class="err">建</span><span class="err">立</span><span class="err">质</span><span class="err">量</span><span class="err">通</span><span class="err">量</span>
             <span class="p">(</span>
                 <span class="n">IOobject</span>
                 <span class="p">(</span>
-                    <span class="sa"></span><span class="s">&#34;</span><span class="s">rhoPhi</span><span class="s">&#34;</span><span class="p">,</span>
+                    <span class="sa"></span><span class="s">"</span><span class="s">rhoPhi</span><span class="s">"</span><span class="p">,</span>
                     <span class="n">runTime</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
                     <span class="n">mesh</span>
                 <span class="p">)</span><span class="p">,</span>
@@ -300,14 +272,14 @@
                 <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimMass</span><span class="o">/</span><span class="n">dimTime</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
             <span class="p">)</span><span class="p">;</span>
             <span class="n">mixture</span><span class="o">-</span><span class="o">&gt;</span><span class="n">correct</span><span class="p">(</span><span class="p">)</span><span class="p">;</span><span class="err">#</span><span class="err">修</span><span class="err">正</span><span class="err">混</span><span class="err">合</span><span class="err">流</span><span class="err">体</span><span class="err">物</span><span class="err">性</span>
-            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;alphaEqnSubCycle.H&#34;</span><span class="cp">
+            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"alphaEqnSubCycle.H"</span><span class="cp">
 </span><span class="cp"></span>            <span class="n">solve</span><span class="p">(</span><span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span> <span class="o">+</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">rhoPhi</span><span class="p">)</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">体</span><span class="err">积</span><span class="err">分</span><span class="err">数</span><span class="n">advection</span>
-            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;UEqn.H&#34;  #求解速度</span><span class="cp">
-</span><span class="cp"></span>            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;eEqn.H&#34;  #根据速度修正能量</span><span class="cp">
+            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"UEqn.H"  #求解速度</span><span class="cp">
+</span><span class="cp"></span>            <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"eEqn.H"  #根据速度修正能量</span><span class="cp">
 </span><span class="cp"></span>            <span class="c1">// --- Pressure corrector loop
 </span><span class="c1"></span>            <span class="k">while</span> <span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">correct</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
             <span class="p">{</span>
-                <span class="cp">#</span><span class="cp">include</span> <span class="cpf">&#34;pEqn.H&#34;  #压力修正</span><span class="cp">
+                <span class="cp">#</span><span class="cp">include</span> <span class="cpf">"pEqn.H"  #压力修正</span><span class="cp">
 </span><span class="cp"></span>            <span class="p">}</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">turbCorr</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
             <span class="p">{</span>
@@ -318,13 +290,13 @@
         <span class="n">runTime</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
         <span class="n">runTime</span><span class="p">.</span><span class="n">printExecutionTime</span><span class="p">(</span><span class="n">Info</span><span class="p">)</span><span class="p">;</span>
     <span class="p">}</span>
-    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">End</span><span class="se">\n</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">End</span><span class="se">\n</span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
 </div><p>该求解器构建中比较重要的是<code>temperaturePhaseChangeTwoPhaseMixture</code>类，其负责处理相变量的计算。该类继承自<code>IOdictionary</code>，包含两个成员对象，<code>twoPhaseMixtureEThermo</code>和<code>mesh</code>。</p>
-<p><img src="https://tva1.sinaimg.cn/large/0082zybply1gbtswsmk8tj30x20i4did.jpg" alt="image-20200212183756118"></p>
+<p><img alt="image-20200212183756118" src="https://tva1.sinaimg.cn/large/0082zybply1gbtswsmk8tj30x20i4did.jpg"/></p>
 <p><code>twoPhaseMixtureEThermo</code>主要包含两相流体的热物性质，<code>mesh</code>包含流场中的网格信息。<code>temperaturePhaseChangeTwoPhaseMixture</code>则将热物理性质映射至网格上。<code>twoPhaseMixtureEThermo</code>继承自<code>basicThermo</code>和<code>thermoIncompressibleTwoPhaseMixture</code>，前者是标准类，包含焓、温度、压力等成员变量，后者包含潜热、比热容、热导率等与传热相关的物性。</p>
 <p>在该求解器中，重要的内容有：</p>
 <ul>
@@ -365,7 +337,7 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="c1">//- Runtime type information,作为父类
-</span><span class="c1"></span>    <span class="n">TypeName</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;</span><span class="s">temperaturePhaseChangeTwoPhaseMixture</span><span class="s">&#34;</span><span class="p">)</span><span class="p">;</span>
+</span><span class="c1"></span>    <span class="n">TypeName</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">temperaturePhaseChangeTwoPhaseMixture</span><span class="s">"</span><span class="p">)</span><span class="p">;</span>
 
     <span class="c1">// Declare run-time constructor selection table，构建RTS表，key值为模型名，value为指针
 </span><span class="c1"></span>        <span class="n">declareRunTimeSelectionTable</span>
@@ -448,7 +420,7 @@
     <span class="p">(</span>
         <span class="n">IOobject</span>
         <span class="p">(</span>
-            <span class="sa"></span><span class="s">&#34;</span><span class="s">phaseChangeProperties</span><span class="s">&#34;</span><span class="p">,</span>
+            <span class="sa"></span><span class="s">"</span><span class="s">phaseChangeProperties</span><span class="s">"</span><span class="p">,</span>
             <span class="n">mesh</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">constant</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
             <span class="n">mesh</span><span class="p">,</span>
             <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">MUST_READ</span><span class="p">,</span>
@@ -459,19 +431,19 @@
 
     <span class="k">const</span> <span class="n">word</span> <span class="n">modelType</span>   <span class="err">#</span><span class="err">读</span><span class="err">取</span><span class="err">相</span><span class="err">变</span><span class="err">模</span><span class="err">型</span><span class="err">字</span><span class="err">符</span><span class="err">串</span>
     <span class="p">(</span>
-        <span class="n">phaseChangePropertiesDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;</span><span class="s">phaseChangeTwoPhaseModel</span><span class="s">&#34;</span><span class="p">)</span>
+        <span class="n">phaseChangePropertiesDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">phaseChangeTwoPhaseModel</span><span class="s">"</span><span class="p">)</span>
     <span class="p">)</span><span class="p">;</span>
 
-    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">Selecting phaseChange model </span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">modelType</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Selecting phaseChange model </span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">modelType</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
 
     <span class="k">auto</span> <span class="n">cstrIter</span> <span class="o">=</span> <span class="n">componentsConstructorTablePtr_</span><span class="o">-</span><span class="o">&gt;</span><span class="n">cfind</span><span class="p">(</span><span class="n">modelType</span><span class="p">)</span><span class="p">;</span> <span class="err">#</span><span class="err">在</span><span class="err">表</span><span class="err">中</span><span class="err">寻</span><span class="err">找</span><span class="err">对</span><span class="err">应</span><span class="n">key值</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cstrIter</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="p">)</span><span class="p">)</span> <span class="err">#</span><span class="err">若</span><span class="err">没</span><span class="err">有</span><span class="err">输</span><span class="err">出</span><span class="err">表</span><span class="err">中</span><span class="err">所</span><span class="err">有</span><span class="n">key值</span>
     <span class="p">{</span>
         <span class="n">FatalErrorInFunction</span>
-            <span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">Unknown temperaturePhaseChangeTwoPhaseMixture type </span><span class="s">&#34;</span>
+            <span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Unknown temperaturePhaseChangeTwoPhaseMixture type </span><span class="s">"</span>
             <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">modelType</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">nl</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">nl</span>
-            <span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">Valid temperaturePhaseChangeTwoPhaseMixture types :</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span>
+            <span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Valid temperaturePhaseChangeTwoPhaseMixture types :</span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span>
             <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">componentsConstructorTablePtr_</span><span class="o">-</span><span class="o">&gt;</span><span class="n">sortedToc</span><span class="p">(</span><span class="p">)</span>
             <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">exit</span><span class="p">(</span><span class="n">FatalError</span><span class="p">)</span><span class="p">;</span>
     <span class="p">}</span>
@@ -582,7 +554,7 @@ $$
         <span class="n">min</span><span class="p">(</span><span class="n">max</span><span class="p">(</span><span class="n">mixture_</span><span class="p">.</span><span class="n">alpha2</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">scalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="p">)</span><span class="p">,</span> <span class="n">scalar</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="p">)</span>
     <span class="p">)</span><span class="p">;</span>
 
-    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">mesh_</span><span class="p">.</span><span class="n">lookupObject</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;</span><span class="s">T</span><span class="s">&#34;</span><span class="p">)</span><span class="p">;</span>
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">mesh_</span><span class="p">.</span><span class="n">lookupObject</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">T</span><span class="s">"</span><span class="p">)</span><span class="p">;</span>
 
     <span class="k">const</span> <span class="n">twoPhaseMixtureEThermo</span><span class="o">&amp;</span> <span class="n">thermo</span> <span class="o">=</span>
         <span class="n">refCast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">twoPhaseMixtureEThermo</span><span class="o">&gt;</span>
@@ -631,7 +603,7 @@ $$
 <pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">volScalarField</span><span class="o">&gt;</span><span class="o">&gt;</span>
 <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">temperaturePhaseChangeTwoPhaseMixtures</span><span class="o">:</span><span class="o">:</span><span class="n">constant</span><span class="o">:</span><span class="o">:</span><span class="n">mDotAlphal</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
 <span class="p">{</span>
-    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">mesh_</span><span class="p">.</span><span class="n">lookupObject</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;</span><span class="s">T</span><span class="s">&#34;</span><span class="p">)</span><span class="p">;</span>
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">mesh_</span><span class="p">.</span><span class="n">lookupObject</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">T</span><span class="s">"</span><span class="p">)</span><span class="p">;</span>
 
     <span class="k">const</span> <span class="n">twoPhaseMixtureEThermo</span><span class="o">&amp;</span> <span class="n">thermo</span> <span class="o">=</span>
         <span class="n">refCast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">twoPhaseMixtureEThermo</span><span class="o">&gt;</span>
@@ -1022,14 +994,14 @@ $$</p>
     <span class="n">transportPropertiesDict_</span><span class="p">(</span><span class="n">dict</span><span class="p">)</span><span class="p">,</span>
     <span class="n">cAlpha_</span>
     <span class="p">(</span>
-        <span class="n">alpha1</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">solverDict</span><span class="p">(</span><span class="n">alpha1</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;</span><span class="s">cAlpha</span><span class="s">&#34;</span><span class="p">)</span>
+        <span class="n">alpha1</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">solverDict</span><span class="p">(</span><span class="n">alpha1</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">cAlpha</span><span class="s">"</span><span class="p">)</span>
     <span class="p">)</span><span class="p">,</span>
 
     <span class="n">sigmaPtr_</span><span class="p">(</span><span class="n">surfaceTensionModel</span><span class="o">:</span><span class="o">:</span><span class="n">New</span><span class="p">(</span><span class="n">dict</span><span class="p">,</span> <span class="n">alpha1</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span><span class="p">,</span>
 
     <span class="n">deltaN_</span>
     <span class="p">(</span>
-        <span class="sa"></span><span class="s">&#34;</span><span class="s">deltaN</span><span class="s">&#34;</span><span class="p">,</span>
+        <span class="sa"></span><span class="s">"</span><span class="s">deltaN</span><span class="s">"</span><span class="p">,</span>
         <span class="mf">1e-8</span><span class="o">/</span><span class="n">cbrt</span><span class="p">(</span><span class="n">average</span><span class="p">(</span><span class="n">alpha1</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
     <span class="p">)</span><span class="p">,</span>
 
@@ -1040,7 +1012,7 @@ $$</p>
     <span class="p">(</span>
         <span class="n">IOobject</span>
         <span class="p">(</span>
-            <span class="sa"></span><span class="s">&#34;</span><span class="s">nHatf</span><span class="s">&#34;</span><span class="p">,</span>
+            <span class="sa"></span><span class="s">"</span><span class="s">nHatf</span><span class="s">"</span><span class="p">,</span>
             <span class="n">alpha1_</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
             <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span>
         <span class="p">)</span><span class="p">,</span>
@@ -1052,7 +1024,7 @@ $$</p>
     <span class="p">(</span>
         <span class="n">IOobject</span>
         <span class="p">(</span>
-            <span class="sa"></span><span class="s">&#34;</span><span class="s">interfaceProperties:K</span><span class="s">&#34;</span><span class="p">,</span>
+            <span class="sa"></span><span class="s">"</span><span class="s">interfaceProperties:K</span><span class="s">"</span><span class="p">,</span>
             <span class="n">alpha1_</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
             <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span>
         <span class="p">)</span><span class="p">,</span>
@@ -1079,7 +1051,7 @@ $$</p>
 </span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">Creating temperaturePhaseChangeTwoPhaseMixture</span><span class="se">\n</span><span class="s">&#34;</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Creating temperaturePhaseChangeTwoPhaseMixture</span><span class="se">\n</span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
 <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">temperaturePhaseChangeTwoPhaseMixture</span><span class="o">&gt;</span> <span class="n">mixture</span> <span class="o">=</span>
     <span class="n">temperaturePhaseChangeTwoPhaseMixture</span><span class="o">:</span><span class="o">:</span><span class="n">New</span><span class="p">(</span><span class="n">thermo</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span><span class="p">;</span>
 
@@ -1125,7 +1097,7 @@ $$</p>
 </span><span class="c1"></span>    <span class="k">const</span> <span class="n">surfaceVectorField</span><span class="o">&amp;</span> <span class="n">Sf</span> <span class="o">=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">Sf</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
 
     <span class="c1">// Cell gradient of alpha
-</span><span class="c1"></span>    <span class="k">const</span> <span class="n">volVectorField</span> <span class="nf">gradAlpha</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">grad</span><span class="p">(</span><span class="n">alpha1_</span><span class="p">,</span> <span class="sa"></span><span class="s">&#34;</span><span class="s">nHat</span><span class="s">&#34;</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+</span><span class="c1"></span>    <span class="k">const</span> <span class="n">volVectorField</span> <span class="nf">gradAlpha</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">grad</span><span class="p">(</span><span class="n">alpha1_</span><span class="p">,</span> <span class="sa"></span><span class="s">"</span><span class="s">nHat</span><span class="s">"</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
   
     <span class="c1">// Interpolated face-gradient of alpha
 </span><span class="c1"></span>    <span class="n">surfaceVectorField</span> <span class="nf">gradAlphaf</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">gradAlpha</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
@@ -1227,95 +1199,78 @@ $$</p>
 </code></pre></td></tr></table>
 </div>
 </div><p>至此，该求解器中重要的部分就大体分析完了。</p>
-    </div>
-
-    <div class="post-copyright">
-  <p class="copyright-item">
-    <span class="item-title">Author</span>
-    <span class="item-content">ZZQ</span>
-  </p>
-  <p class="copyright-item">
-    <span class="item-title">LastMod</span>
-    <span class="item-content">
+</div>
+<div class="post-copyright">
+<p class="copyright-item">
+<span class="item-title">Author</span>
+<span class="item-content">ZZQ</span>
+</p>
+<p class="copyright-item">
+<span class="item-title">LastMod</span>
+<span class="item-content">
         Wednesday, February 12, 2020
         
     </span>
-  </p>
-  
-  
+</p>
 </div>
 <footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/ec/">E&amp;C</a>
-          <a href="/tags/openfoam/">OpenFOAM</a>
-          <a href="/tags/code/">code</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/loveletter/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">Loveletter</span>
-            <span class="prev-text nav-mobile">Prev</span>
-          </a>
-        
-      </nav>
-    </footer>
-  </article>
-        </div>
-        
-
-  
-
-  
-
-      </div>
-    </main>
-
-    <footer id="footer" class="footer">
-      <div class="social-links">
-      <a href="mailto:zuozqi@sjtu.edu.cn" class="iconfont icon-email" title="email"></a>
-  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+<div class="post-tags">
+<a href="/tags/ec/">E&amp;C</a>
+<a href="/tags/openfoam/">OpenFOAM</a>
+<a href="/tags/code/">code</a>
 </div>
-
+<nav class="post-nav">
+<a class="prev" href="/post/loveletter/">
+<i class="iconfont icon-left"></i>
+<span class="prev-text nav-default">Loveletter</span>
+<span class="prev-text nav-mobile">Prev</span>
+</a>
+</nav>
+</footer>
+</article>
+</div>
+</div>
+</main>
+<footer class="footer" id="footer">
+<div class="social-links">
+<a class="iconfont icon-email" href="mailto:zuozqi@sjtu.edu.cn" title="email"></a>
+<a class="iconfont icon-rss" href="http://localhost:1313/index.xml" title="rss" type="application/rss+xml"></a>
+</div>
 <div class="copyright">
-  <span class="power-by">
+<span class="power-by">
     Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
-  </span>
-  <span class="division">|</span>
-  <span class="theme-info">
+</span>
+<span class="division">|</span>
+<span class="theme-info">
     Theme - 
     <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
-  </span>
-
-  
-
-  <span class="copyright-year">
-    &copy; 
+</span>
+<span class="copyright-year">
+    © 
     2020
     <span class="heart">
-      <i class="iconfont icon-heart"></i>
-    </span>
-    <span class="author">ZZQ</span>
-  </span>
+<i class="iconfont icon-heart"></i>
+</span>
+<span class="author">ZZQ</span>
+</span>
 </div>
-    </footer>
-
-    <div class="back-to-top" id="back-to-top">
-      <i class="iconfont icon-up"></i>
-    </div>
-  </div>
-  
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
-  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+</footer>
+<div class="back-to-top" id="back-to-top">
+<i class="iconfont icon-up"></i>
+</div>
+</div>
+<script crossorigin="anonymous" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js"></script>
+<script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
     var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
     timeago().render(document.querySelectorAll('.timeago'), languageCode);
     timeago.cancel();  
   </script>
-<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
-  <script type="text/javascript">
+<script src="/dist/even.26188efa.min.js" type="text/javascript"></script>
+<script type="text/javascript">
     window.MathJax = {
       tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
       TeX: {equationNumbers: {autoNumber: "AMS"}},
@@ -1323,14 +1278,6 @@ $$</p>
       messageStyle: 'none'
     };
   </script>
-  <script async src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"  integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script>
-
-
-
-
-
-
-
-
+<script async="" crossorigin="anonymous" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 </body>
 </html>

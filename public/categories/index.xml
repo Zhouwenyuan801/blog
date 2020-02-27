@@ -6,10 +6,19 @@
     <description>Recent content in Categories on MrZZQi&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 14 Feb 2020 13:16:59 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 27 Feb 2020 13:03:32 +0800</lastBuildDate>
     
 	<atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>OpenFOAM</title>
+      <link>http://localhost:1313/categories/openfoam/</link>
+      <pubDate>Thu, 27 Feb 2020 13:03:32 +0800</pubDate>
+      
+      <guid>http://localhost:1313/categories/openfoam/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>unarchieved</title>
@@ -17,15 +26,6 @@
       <pubDate>Fri, 14 Feb 2020 13:16:59 +0800</pubDate>
       
       <guid>http://localhost:1313/categories/unarchieved/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>OpenFOAM</title>
-      <link>http://localhost:1313/categories/openfoam/</link>
-      <pubDate>Wed, 12 Feb 2020 16:44:32 +0800</pubDate>
-      
-      <guid>http://localhost:1313/categories/openfoam/</guid>
       <description></description>
     </item>
     

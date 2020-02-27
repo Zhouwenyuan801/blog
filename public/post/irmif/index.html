@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+<title>IRMIF中蒸发冷凝模型实现方式 - MrZZQi's Blog</title>
+<meta content="webkit" name="renderer"/>
+<meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport"/>
+<meta content="no-transform" http-equiv="Cache-Control"/>
+<meta content="no-siteapp" http-equiv="Cache-Control"/>
+<meta content="#f8f5ec" name="theme-color"/>
+<meta content="#f8f5ec" name="msapplication-navbutton-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="#f8f5ec" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="ZZQ" name="author"/><meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" name="description"/><meta content="E&amp;C, OpenFOAM" name="keywords"/>
+<meta content="Hugo 0.64.1 with theme even" name="generator"/>
+<link href="http://localhost:1313/post/irmif/" rel="canonical"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet"/>
+<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" rel="stylesheet"/>
+<meta content="IRMIF中蒸发冷凝模型实现方式" property="og:title"/>
+<meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" property="og:description"/>
+<meta content="article" property="og:type"/>
+<meta content="http://localhost:1313/post/irmif/" property="og:url"/>
+<meta content="2020-02-27T13:03:32+08:00" property="article:published_time"/>
+<meta content="2020-02-27T13:03:32+08:00" property="article:modified_time"/>
+<meta content="IRMIF中蒸发冷凝模型实现方式" itemprop="name"/>
+<meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" itemprop="description"/>
+<meta content="2020-02-27T13:03:32+08:00" itemprop="datePublished"/>
+<meta content="2020-02-27T13:03:32+08:00" itemprop="dateModified"/>
+<meta content="3896" itemprop="wordCount"/>
+<meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
+<meta content="IRMIF中蒸发冷凝模型实现方式" name="twitter:title"/>
+<meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" name="twitter:description"/>
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+</head>
+<body>
+<div class="mobile-navbar" id="mobile-navbar">
+<div class="mobile-header-logo">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<div class="mobile-navbar-icon">
+<span></span>
+<span></span>
+<span></span>
+</div>
+</div>
+<nav class="mobile-menu slideout-menu" id="mobile-menu">
+<ul class="mobile-menu-list">
+<a href="/">
+<li class="mobile-menu-item">Home</li>
+</a><a href="/post/">
+<li class="mobile-menu-item">Archives</li>
+</a><a href="/tags/">
+<li class="mobile-menu-item">Tags</li>
+</a><a href="/categories/">
+<li class="mobile-menu-item">Categories</li>
+</a>
+</ul>
+</nav>
+<div class="container" id="mobile-panel">
+<header class="header" id="header">
+<div class="logo-wrapper">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<nav class="site-navbar">
+<ul class="menu" id="menu">
+<li class="menu-item">
+<a class="menu-item-link" href="/">Home</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/post/">Archives</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/tags/">Tags</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/categories/">Categories</a>
+</li>
+</ul>
+</nav>
+</header>
+<main class="main" id="main">
+<div class="content-wrapper">
+<div class="content" id="content">
+<article class="post">
+<header class="post-header">
+<h1 class="post-title">IRMIF中蒸发冷凝模型实现方式</h1>
+<div class="post-meta">
+<span class="post-time"> Thursday, February 27, 2020 </span>
+<div class="post-category">
+<a href="/categories/openfoam/"> OpenFOAM </a>
+</div>
+<span class="more-meta"> 3896 words </span>
+<span class="more-meta"> 8 mins read </span>
+</div>
+</header>
+<div class="post-toc" id="post-toc">
+<h2 class="post-toc-title">Contents</h2>
+<div class="post-toc-content">
+<nav id="TableOfContents">
+<ul>
+<li><a href="#总览">总览</a></li>
+<li><a href="#求解器整体框架分析">求解器整体框架分析</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<div class="post-content">
+<h2 id="总览">总览</h2>
+<p><code>icoReactingMultiphaseInterFoam</code>是相较iCEF更复杂也更全面的一个求解器。除两相间的换热外，该求解器还可以计算多相间的传热传质（比如气相中氦气的增压过程）。相对应的，求解器涉及到的功能更多，主要是做化学的人在维护，但很多功能现在还用不到，所以这次并没有选用。但是这个求解器包含了实际上是<code>Schrage</code>模型的相变模型。非常可以参考这种规范性的写法。下面记录分析思路。</p>
+<h2 id="求解器整体框架分析">求解器整体框架分析</h2>
+<p>先看主文件，主文件中特殊的地方有：</p>
+<ul>
+<li>似乎所有跟混合物、界面有关的求解都通过<code>fluid</code>完成，例如在每个PISO循环前有<code>fluid.solve()     </code>,<code>rho=fluid.rho()</code>更新混合体系状态</li>
+<li>除温度、压力和速度方程外，求解器另外求解了混合物浓度方程<code>YEqn</code>。该方程中也包含了相方程中源项的计算：</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="c1">// Calculate mass exchange for species consistent with
+</span><span class="c1"></span><span class="c1">// alpha's source terms.
+</span><span class="c1"></span><span class="n">fluid</span><span class="p">.</span><span class="n">massSpeciesTransfer</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">Sus</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="p">,</span> <span class="n">Sps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="p">,</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在压力方程中，和<code>iCEF</code>相同，也有相变的计算，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">tdmdt12</span><span class="p">(</span><span class="n">fluid</span><span class="p">.</span><span class="n">dmdt</span><span class="p">(</span><span class="n">key12</span><span class="p">)</span><span class="p">)</span>
+
+  <span class="n">p_rghEqn</span> <span class="o">+</span><span class="o">=</span>
+<span class="n">dmdtNet</span><span class="o">*</span>
+<span class="p">(</span>
+<span class="o">-</span> <span class="n">fluid</span><span class="p">.</span><span class="n">coeffs</span><span class="p">(</span><span class="n">phase1</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+<span class="o">+</span> <span class="n">fluid</span><span class="p">.</span><span class="n">coeffs</span><span class="p">(</span><span class="n">phase2</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+<span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中，<code>key12</code>是两相体系组成的键值对，而<code>fluid.dmdt()</code>是相变模型返回的相变速率。</p>
+<p>那么问题的关键就是弄懂<code>fluid</code>到底是什么东西，以及相变模型是如何耦合的。</p>
+<p>在<code>createFileds.H</code>中发现，<code>fluid</code>是指向<code>multiphaseSystem</code>类的指针指向对象的引用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Creating multiphaseSystem</span><span class="se">\n</span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+<span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">multiphaseSystem</span><span class="o">&gt;</span> <span class="n">fluidPtr</span> <span class="o">=</span> <span class="n">multiphaseSystem</span><span class="o">:</span><span class="o">:</span><span class="n">New</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span><span class="p">;</span>
+<span class="n">multiphaseSystem</span><span class="o">&amp;</span> <span class="n">fluid</span> <span class="o">=</span> <span class="n">fluidPtr</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这种调用方式说明这其实是RTS动态选取的类，在后文中有介绍。<code>multiphaseSystem.h</code>文件在<code>phaseSystem</code>文件夹内，而<code>multiphaseSystem</code>也是前者的子类。下面先看<code>phaseSystem</code>类的构造，其继承自<code>basicThermo</code>和<code>compressibleTransportModel</code>，并包含有两相体系表、相模型表、表面张力模型表、界面多孔模型表等Hash表。这些表记录了特定体系中使用的具体方法。而<code>multiphaseSystem</code>类中多定义了</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="c1">//- Maximum volumen rate change
+</span><span class="c1"></span><span class="n">dimensionedScalar</span> <span class="n">ddtAlphaMax_</span><span class="p">;</span>
+<span class="c1">//- Compression fluxed for phases
+</span><span class="c1"></span><span class="n">compressionFluxTable</span> <span class="n">limitedPhiAlphas_</span><span class="p">;</span>
+<span class="c1">//- Su phase source terms
+</span><span class="c1"></span><span class="n">SuSpTable</span> <span class="n">Su_</span><span class="p">;</span>
+<span class="c1">//- Sp phase source terms
+</span><span class="c1"></span><span class="n">SuSpTable</span> <span class="n">Sp_</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">calculateSuSp</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+<span class="k">virtual</span> <span class="kt">void</span> <span class="nf">solve</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中，<code>Su</code>，<code>Sp</code>为相方程源项，不同于<code>iCEF</code>，本求解器将相方程改写为，
+$$
+\frac{\partial \alpha_l}{\partial t} + \nabla \cdot (\alpha_l \mathbf U) = S_u + \alpha_l S_p
+$$</p>
+<p>其中，
+$$
+S_u = \frac{\dot{m}}{\rho_l}
+$$</p>
+<p>$$
+S_p = \frac{\dot{m}}{\rho_l-\rho_v}
+$$</p>
+<p>同时，该类还增加了主文件中出现的<code>solve()</code>函数和看起来像是计算源项的<code>calculateSuSp()</code>函数。</p>
+<p><code>solve()</code>函数定义了相方程，并完成了MULES修正。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">            <span class="n">fvScalarMatrix</span> <span class="nf">alpha1Eqn</span>
+            <span class="p">(</span>
+                <span class="n">fv</span><span class="o">:</span><span class="o">:</span><span class="n">EulerDdtScheme</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span><span class="p">.</span><span class="n">fvmDdt</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span>
+              <span class="o">+</span> <span class="n">fv</span><span class="o">:</span><span class="o">:</span><span class="n">gaussConvectionScheme</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span>
+                <span class="p">(</span>
+                    <span class="n">mesh</span><span class="p">,</span>
+                    <span class="n">phi</span><span class="p">,</span>
+                    <span class="n">upwind</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span>
+                <span class="p">)</span><span class="p">.</span><span class="n">fvmDiv</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">alpha1</span><span class="p">)</span>
+              <span class="o">=</span><span class="o">=</span>
+                 <span class="n">Su</span> <span class="o">+</span> <span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">Sp</span><span class="p">(</span><span class="n">Sp</span><span class="p">,</span> <span class="n">alpha1</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+
+            <span class="n">alpha1Eqn</span><span class="p">.</span><span class="n">solve</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可见，这里将<code>Sp</code>项隐式处理进系数矩阵中。而<code>iCEF</code>中是以显式源项的形式出现，目前不知道这两种处理方式的差异有多大，但联想到<code>iCEF</code>中的骚操作，个人更倾向使用这种方法。在求解相方程前，该函数也调用了<code>calculateSuSp()</code>方法。所以该函数完成的任务是求解每一个两相体系中的源项，并完成相迁移的计算。</p>
+<p>接下来看<code>calculateSuSp()</code>方法。因为涉及到多相体系，这里有很多遍历语句和判断，这里略去不表，只分析其中的一种情况。重要的是更新源项的内容。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">tdmdt12</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">dmdt</span><span class="p">(</span><span class="n">key12</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+        <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">dmdt12</span> <span class="o">=</span> <span class="n">tdmdt12</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">tdmdt21</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">dmdt</span><span class="p">(</span><span class="n">key21</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+        <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">dmdt21</span> <span class="o">=</span> <span class="n">tdmdt21</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">SpPhase1</span> <span class="o">=</span> <span class="n">Sp_</span><span class="p">[</span><span class="n">phase1</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="p">;</span>
+
+        <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">SuPhase1</span> <span class="o">=</span> <span class="n">Su_</span><span class="p">[</span><span class="n">phase1</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="p">;</span>
+
+        <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">SpPhase2</span> <span class="o">=</span> <span class="n">Sp_</span><span class="p">[</span><span class="n">phase2</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="p">;</span>
+
+        <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">SuPhase2</span> <span class="o">=</span> <span class="n">Su_</span><span class="p">[</span><span class="n">phase2</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="p">;</span>
+
+        <span class="k">const</span> <span class="n">volScalarField</span> <span class="nf">dmdtNet</span><span class="p">(</span><span class="n">dmdt21</span> <span class="o">-</span> <span class="n">dmdt12</span><span class="p">)</span><span class="p">;</span>
+
+        <span class="k">const</span> <span class="n">volScalarField</span> <span class="nf">coeffs12</span><span class="p">(</span><span class="n">coeffs1</span> <span class="o">-</span> <span class="n">coeffs2</span><span class="p">)</span><span class="p">;</span>
+        <span class="n">forAll</span><span class="p">(</span><span class="n">dmdtNet</span><span class="p">,</span> <span class="n">celli</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">scalar</span> <span class="n">dmdt21</span> <span class="o">=</span> <span class="n">dmdtNet</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="p">;</span>
+            <span class="n">scalar</span> <span class="n">coeffs12Cell</span> <span class="o">=</span> <span class="n">coeffs12</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="p">;</span>
+
+            <span class="n">scalar</span> <span class="n">alpha1Limited</span> <span class="o">=</span> <span class="n">max</span><span class="p">(</span><span class="n">min</span><span class="p">(</span><span class="n">alpha1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="c1">// exp.
+</span><span class="c1"></span>            <span class="n">SuPhase1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">+</span><span class="o">=</span> <span class="n">coeffs1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="o">*</span><span class="n">dmdt21</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">dmdt21</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">coeffs12Cell</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="c1">// imp
+</span><span class="c1"></span>                    <span class="n">SpPhase1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">-</span><span class="o">=</span> <span class="n">dmdt21</span><span class="o">*</span><span class="n">coeffs12Cell</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">coeffs12Cell</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="c1">// exp
+</span><span class="c1"></span>                    <span class="n">SuPhase1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">-</span><span class="o">=</span>
+                        <span class="n">dmdt21</span><span class="o">*</span><span class="n">coeffs12Cell</span><span class="o">*</span><span class="n">alpha1Limited</span><span class="p">;</span>
+                <span class="p">}</span>
+              <span class="p">.</span><span class="p">.</span><span class="p">.</span>
+              <span class="p">.</span><span class="p">.</span><span class="p">.</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可见，这里是先获得了<code>dmdtNet</code>即$\dot{m}$ ，随后判断相变的方向再按公式(2-3)更新源项。那么相变模型的选取将最终影响到这个<code>dmdt()</code>这个函数，但这个函数在<code>multiphaseSystem.C</code>中并没有定义，联想到前面提到该类其实是动态选取的，在<code>multiphaseSystems.C</code>中发现，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="k">typedef</span>
+        <span class="n">MassTransferPhaseSystem</span><span class="o">&lt;</span><span class="n">multiphaseSystem</span><span class="o">&gt;</span> <span class="n">massTransferMultiphaseSystem</span><span class="p">;</span>
+
+    <span class="n">addNamedToRunTimeSelectionTable</span>
+    <span class="p">(</span>
+        <span class="n">multiphaseSystem</span><span class="p">,</span>
+        <span class="n">massTransferMultiphaseSystem</span><span class="p">,</span>
+        <span class="n">dictionary</span><span class="p">,</span>
+        <span class="n">massTransferMultiphaseSystem</span>
+    <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可以看到，这里将<code>MassTransferPhaseSystem&lt;multiphaseSystem&gt;</code>加入到了类的RTS表中。这个类是以<code>multiphaseSystem</code>为模版参数的派生类，其内容包括</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">        <span class="c1">//- Overall inter-phase mass transfer rates [Kg/s]
+</span><span class="c1"></span>        <span class="n">dmdtTable</span> <span class="n">dmdt_</span><span class="p">;</span>
+
+        <span class="c1">//- Mass transfer models
+</span><span class="c1"></span>        <span class="n">massTransferModelTable</span> <span class="n">massTransferModels_</span><span class="p">;</span>
+        <span class="c1">//- Return total interfacial mass flow rate
+</span><span class="c1"></span>        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">dmdt</span><span class="p">(</span><span class="k">const</span> <span class="n">phasePairKey</span><span class="o">&amp;</span> <span class="n">key</span><span class="p">)</span> <span class="k">const</span><span class="p">;</span>
+
+        <span class="c1">//- Return the heat transfer matrix and fill dmdt for phases
+</span><span class="c1"></span>        <span class="k">virtual</span>  <span class="n">tmp</span><span class="o">&lt;</span><span class="n">fvScalarMatrix</span><span class="o">&gt;</span> <span class="n">heatTransfer</span><span class="p">(</span><span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span><span class="p">)</span><span class="p">;</span>
+
+        <span class="c1">//- Calculate mass transfer for species
+</span><span class="c1"></span>        <span class="k">virtual</span> <span class="kt">void</span> <span class="nf">massSpeciesTransfer</span>
+        <span class="p">(</span>
+            <span class="k">const</span> <span class="n">phaseModel</span><span class="o">&amp;</span> <span class="n">phase</span><span class="p">,</span>
+            <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">Su</span><span class="p">,</span>
+            <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">Sp</span><span class="p">,</span>
+            <span class="k">const</span> <span class="n">word</span> <span class="n">speciesName</span>
+        <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>两个表对应各个相对的传质速率和选用的相变模型，<code>massSpeciesTransfer</code>如前所述返回的是相方程的RHS，<code>dmdt()</code>只是数据接口，真正起作用的是<code>heatTransfer()</code>方法，该方法在<code>TEqn.H</code>中被调用。那么这个函数起到的作用应该是返回各个计算单元内与相变有关的传热量，同时计算更新传质速率。这应该是本求解器关于相变的重点。因为代码比较长，所以大部分标注在代码上。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">BasePhaseSystem</span><span class="o">&gt;</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">fvScalarMatrix</span><span class="o">&gt;</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">MassTransferPhaseSystem</span><span class="o">&lt;</span><span class="n">BasePhaseSystem</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">heatTransfer</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span>
+<span class="p">)</span>
+<span class="p">{</span>
+  <span class="c1">//构建增加在TEqn中的Matrix类
+</span><span class="c1"></span>    <span class="n">tmp</span><span class="o">&lt;</span><span class="n">fvScalarMatrix</span><span class="o">&gt;</span> <span class="n">tEqnPtr</span>
+    <span class="p">(</span>
+        <span class="k">new</span> <span class="n">fvScalarMatrix</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">dimEnergy</span><span class="o">/</span><span class="n">dimTime</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="n">fvScalarMatrix</span><span class="o">&amp;</span> <span class="n">eqn</span> <span class="o">=</span> <span class="n">tEqnPtr</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+	<span class="c1">//循环所有的两相体系
+</span><span class="c1"></span>    <span class="n">forAllConstIters</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">phaseModels_</span><span class="p">,</span> <span class="n">iteri</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">const</span> <span class="n">phaseModel</span><span class="o">&amp;</span> <span class="n">phasei</span> <span class="o">=</span> <span class="n">iteri</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+        <span class="k">auto</span> <span class="n">iterk</span> <span class="o">=</span> <span class="n">iteri</span><span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="o">+</span><span class="o">+</span><span class="n">iterk</span><span class="p">;</span> <span class="n">iterk</span> <span class="o">!</span><span class="o">=</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">phaseModels_</span><span class="p">.</span><span class="n">end</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="o">+</span><span class="o">+</span><span class="n">iterk</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">iteri</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span> <span class="o">!</span><span class="o">=</span> <span class="n">iterk</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">const</span> <span class="n">phaseModel</span><span class="o">&amp;</span> <span class="n">phasek</span> <span class="o">=</span> <span class="n">iterk</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+                <span class="c1">// Phase i to phase k
+</span><span class="c1"></span>                <span class="k">const</span> <span class="n">phasePairKey</span> <span class="nf">keyik</span><span class="p">(</span><span class="n">phasei</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">phasek</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="nb">true</span><span class="p">)</span><span class="p">;</span>
+
+                <span class="c1">// Phase k to phase i
+</span><span class="c1"></span>                <span class="k">const</span> <span class="n">phasePairKey</span> <span class="nf">keyki</span><span class="p">(</span><span class="n">phasek</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">phasei</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="nb">true</span><span class="p">)</span><span class="p">;</span>
+
+                <span class="c1">// Net mass transfer from k to i phase
+</span><span class="c1"></span>                <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">tdmdtNetki</span>
+                <span class="p">(</span>
+                    <span class="k">new</span> <span class="n">volScalarField</span>
+                    <span class="p">(</span>
+                        <span class="n">IOobject</span>
+                        <span class="p">(</span>
+                            <span class="sa"></span><span class="s">"</span><span class="s">tdmdtYki</span><span class="s">"</span><span class="p">,</span>
+                            <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                            <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                            <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_READ</span><span class="p">,</span>
+                            <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_WRITE</span>
+                        <span class="p">)</span><span class="p">,</span>
+                        <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                        <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimDensity</span><span class="o">/</span><span class="n">dimTime</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span><span class="p">;</span>
+                <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">dmdtNetki</span> <span class="o">=</span> <span class="n">tdmdtNetki</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+							<span class="c1">//如果目前两相体系有定义相变模型的话
+</span><span class="c1"></span>                <span class="k">if</span> <span class="p">(</span><span class="n">massTransferModels_</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="n">keyik</span><span class="p">)</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">interfaceCompositionModel</span><span class="o">&gt;</span><span class="o">&amp;</span> <span class="n">interfacePtr</span> <span class="o">=</span>
+                        <span class="n">massTransferModels_</span><span class="p">[</span><span class="n">keyik</span><span class="p">]</span><span class="p">;</span>
+
+                    <span class="c1">// Explicit temperature mass transfer rate, Kexp()
+</span><span class="c1"></span>                    <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">Kexp</span> <span class="o">=</span>
+                        <span class="n">interfacePtr</span><span class="o">-</span><span class="o">&gt;</span><span class="n">Kexp</span><span class="p">(</span><span class="n">interfaceCompositionModel</span><span class="o">:</span><span class="o">:</span><span class="n">T</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span><span class="p">;</span>
+
+                    <span class="k">if</span> <span class="p">(</span><span class="n">Kexp</span><span class="p">.</span><span class="n">valid</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+                    <span class="p">{</span>
+                      <span class="c1">//更新类私有数据dmdt_
+</span><span class="c1"></span>                        <span class="n">dmdtNetki</span> <span class="o">-</span><span class="o">=</span> <span class="n">Kexp</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+                        <span class="o">*</span><span class="n">dmdt_</span><span class="p">[</span><span class="n">keyik</span><span class="p">]</span> <span class="o">=</span> <span class="n">Kexp</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+
+                <span class="c1">// Looking for mass transfer in the other direction (k to i)
+</span><span class="c1"></span>                <span class="k">if</span> <span class="p">(</span><span class="n">massTransferModels_</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="n">keyki</span><span class="p">)</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">interfaceCompositionModel</span><span class="o">&gt;</span><span class="o">&amp;</span> <span class="n">interfacePtr</span> <span class="o">=</span>
+                        <span class="n">massTransferModels_</span><span class="p">[</span><span class="n">keyki</span><span class="p">]</span><span class="p">;</span>
+
+                    <span class="c1">// Explicit temperature mass transfer rate
+</span><span class="c1"></span>                    <span class="k">const</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">Kexp</span> <span class="o">=</span>
+                        <span class="n">interfacePtr</span><span class="o">-</span><span class="o">&gt;</span><span class="n">Kexp</span><span class="p">(</span><span class="n">interfaceCompositionModel</span><span class="o">:</span><span class="o">:</span><span class="n">T</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span><span class="p">;</span>
+
+                    <span class="k">if</span> <span class="p">(</span><span class="n">Kexp</span><span class="p">.</span><span class="n">valid</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+                    <span class="p">{</span>
+                        <span class="n">dmdtNetki</span> <span class="o">+</span><span class="o">=</span> <span class="n">Kexp</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+                        <span class="o">*</span><span class="n">dmdt_</span><span class="p">[</span><span class="n">keyki</span><span class="p">]</span> <span class="o">=</span> <span class="n">Kexp</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+                    <span class="p">}</span>
+
+                <span class="p">}</span>
+
+                <span class="n">word</span> <span class="nf">keyikName</span><span class="p">(</span><span class="n">phasei</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span> <span class="o">+</span> <span class="n">phasek</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+                <span class="n">word</span> <span class="nf">keykiName</span><span class="p">(</span><span class="n">phasek</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span> <span class="o">+</span> <span class="n">phasei</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+                <span class="n">eqn</span> <span class="o">-</span><span class="o">=</span>
+                  <span class="c1">//更新传热方程，每一个两相体系都有一项
+</span><span class="c1"></span>                    <span class="p">(</span>
+                        <span class="n">dmdtNetki</span>
+                        <span class="o">*</span><span class="p">(</span>
+                            <span class="n">calculateL</span><span class="p">(</span><span class="n">dmdtNetki</span><span class="p">,</span> <span class="n">keyik</span><span class="p">,</span> <span class="n">keyki</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+                            <span class="o">-</span> <span class="p">(</span><span class="n">phasek</span><span class="p">.</span><span class="n">Cp</span><span class="p">(</span><span class="p">)</span> <span class="o">-</span> <span class="n">phasei</span><span class="p">.</span><span class="n">Cp</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+                            <span class="o">*</span> <span class="n">constant</span><span class="o">:</span><span class="o">:</span><span class="n">standard</span><span class="o">:</span><span class="o">:</span><span class="n">Tstd</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">tEqnPtr</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>calculateL()的作用只是返回潜热，对于热量的计算与<code>iCEF</code>相似。可见，这里最终表示传质速率的是<code>interfaceComposition</code>类的<code>Kexp()</code>方法。<code>massTransferModelTable</code>存储的也正是这个类的对象。</p>
+<p>注意，源代码在<code>massTransferModels</code>文件夹内有<code>interfaceCompositionModel</code>和<code>InterfaceCompositionModle</code>，拷贝到不区分大小写的系统会损失部分代码。这里有一些细节同样不考虑，只看<code>Kexp()</code>。作为模版类，<code>interfaceCompositionModel</code>只提供纯虚的<code>Kexp()</code>方法，派生出<code>Lee</code>，<code>kineticGassEvaporation</code>（其实是简化后的Schrage）两种相变模型。下面只看Schrage：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Thermo</span><span class="p">,</span> <span class="k">class</span> <span class="nc">OtherThermo</span><span class="o">&gt;</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">volScalarField</span><span class="o">&gt;</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">meltingEvaporationModels</span><span class="o">:</span><span class="o">:</span><span class="n">kineticGasEvaporation</span><span class="o">&lt;</span><span class="n">Thermo</span><span class="p">,</span> <span class="n">OtherThermo</span><span class="o">&gt;</span>
+<span class="o">:</span><span class="o">:</span><span class="n">Kexp</span><span class="p">(</span><span class="n">label</span> <span class="n">variable</span><span class="p">,</span> <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">field</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">modelVariable_</span> <span class="o">=</span><span class="o">=</span> <span class="n">variable</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">//这里获得的实际上是相分数场
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">to</span> <span class="o">=</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+        <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">from</span> <span class="o">=</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">from</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+        <span class="k">const</span> <span class="n">fvMesh</span><span class="o">&amp;</span> <span class="n">mesh</span> <span class="o">=</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">mesh_</span><span class="p">;</span>
+		<span class="c1">//上一步的温度场
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span>
+            <span class="n">mesh</span><span class="p">.</span><span class="n">lookupObject</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">T</span><span class="s">"</span><span class="p">)</span><span class="p">.</span><span class="n">oldTime</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+		<span class="c1">//HK方程前面的系数 \sqrt{\frac{M}{2\pi R T}
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">dimensionedScalar</span> <span class="nf">HerztKnudsConst</span>
+        <span class="p">(</span>
+            <span class="n">sqrt</span>
+            <span class="p">(</span>
+                <span class="n">Mv_</span>
+               <span class="o">/</span><span class="mf">2.0</span>
+               <span class="o">/</span><span class="n">constant</span><span class="o">:</span><span class="o">:</span><span class="n">physicoChemical</span><span class="o">:</span><span class="o">:</span><span class="n">R</span>
+               <span class="o">/</span><span class="n">mathematical</span><span class="o">:</span><span class="o">:</span><span class="n">pi</span>
+               <span class="o">/</span><span class="n">pow3</span><span class="p">(</span><span class="n">Tactivate_</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+
+        <span class="n">word</span> <span class="n">fullSpeciesName</span> <span class="o">=</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">transferSpecie</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="k">auto</span> <span class="n">tempOpen</span> <span class="o">=</span> <span class="n">fullSpeciesName</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="sa"></span><span class="sc">'</span><span class="sc">.</span><span class="sc">'</span><span class="p">)</span><span class="p">;</span>
+        <span class="k">const</span> <span class="n">word</span> <span class="nf">speciesName</span><span class="p">(</span><span class="n">fullSpeciesName</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tempOpen</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">L</span><span class="p">(</span><span class="n">speciesName</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span><span class="p">;</span>
+				<span class="c1">// \nabla \alpha_l
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">volVectorField</span> <span class="nf">gradFrom</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">grad</span><span class="p">(</span><span class="n">from</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+        <span class="k">const</span> <span class="n">volVectorField</span> <span class="nf">gradTo</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">grad</span><span class="p">(</span><span class="n">to</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+				<span class="c1">// 界面密度，可以用来计算界面面积
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">volScalarField</span> <span class="nf">areaDensity</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">areaDensity</span><span class="s">"</span><span class="p">,</span> <span class="n">mag</span><span class="p">(</span><span class="n">gradFrom</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+			
+        <span class="k">const</span> <span class="n">volScalarField</span> <span class="nf">gradAlphaf</span><span class="p">(</span><span class="n">gradFrom</span> <span class="o">&amp;</span> <span class="n">gradTo</span><span class="p">)</span><span class="p">;</span>
+			
+        <span class="n">volScalarField</span> <span class="nf">Tmask</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">Tmask</span><span class="s">"</span><span class="p">,</span> <span class="n">from</span><span class="o">*</span><span class="mf">0.0</span><span class="p">)</span><span class="p">;</span>
+			<span class="c1">//Mask场，在界面位置为1
+</span><span class="c1"></span>        <span class="n">forAll</span><span class="p">(</span><span class="n">Tmask</span><span class="p">,</span> <span class="n">celli</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">gradAlphaf</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">from</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">alphaMin_</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">from</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">alphaMax_</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="p">{</span>
+                        <span class="n">scalar</span> <span class="n">alphaRes</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">from</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">-</span> <span class="n">to</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="p">;</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">alphaRes</span> <span class="o">&lt;</span> <span class="n">alphaRestMax_</span><span class="p">)</span>
+                        <span class="p">{</span>
+                            <span class="n">Tmask</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+			<span class="c1">//Schrage中的系数
+</span><span class="c1"></span>        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">tRhom</span>
+        <span class="p">(</span>
+            <span class="k">new</span> <span class="n">volScalarField</span>
+            <span class="p">(</span>
+                <span class="n">IOobject</span>
+                <span class="p">(</span>
+                    <span class="sa"></span><span class="s">"</span><span class="s">trhom</span><span class="s">"</span><span class="p">,</span>
+                    <span class="n">mesh</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="n">mesh</span><span class="p">,</span>
+                    <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_READ</span><span class="p">,</span>
+                    <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_WRITE</span>
+                <span class="p">)</span><span class="p">,</span>
+                <span class="n">mesh</span><span class="p">,</span>
+                <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimDensity</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+        <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">rhom</span> <span class="o">=</span> <span class="n">tRhom</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+      
+        <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="n">tTdelta</span>
+        <span class="p">(</span>
+            <span class="k">new</span> <span class="n">volScalarField</span>
+            <span class="p">(</span>
+                <span class="n">IOobject</span>
+                <span class="p">(</span>
+                    <span class="sa"></span><span class="s">"</span><span class="s">trhom</span><span class="s">"</span><span class="p">,</span>
+                    <span class="n">mesh</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="n">mesh</span><span class="p">,</span>
+                    <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_READ</span><span class="p">,</span>
+                    <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_WRITE</span>
+                <span class="p">)</span><span class="p">,</span>
+                <span class="n">mesh</span><span class="p">,</span>
+                <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimTemperature</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+        <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">tDelta</span> <span class="o">=</span> <span class="n">tTdelta</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+			<span class="c1">//将相变区域限制在界面附近
+</span><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">sign</span><span class="p">(</span><span class="n">C_</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="p">)</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">rhom</span> <span class="o">=</span>
+                <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="o">*</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">from</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span>
+              <span class="o">/</span> <span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">from</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span> <span class="o">-</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">tDelta</span> <span class="o">=</span> <span class="n">max</span>
+            <span class="p">(</span>
+                <span class="p">(</span><span class="n">T</span><span class="o">*</span><span class="n">Tmask</span> <span class="o">-</span> <span class="n">Tactivate_</span><span class="p">)</span><span class="p">,</span>
+                <span class="n">dimensionedScalar</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">T0</span><span class="s">"</span><span class="p">,</span> <span class="n">dimTemperature</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="n">rhom</span> <span class="o">=</span>
+                <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="o">*</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">from</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span>
+              <span class="o">/</span> <span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span> <span class="o">-</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">from</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">tDelta</span> <span class="o">=</span> <span class="n">max</span>
+            <span class="p">(</span>
+                <span class="n">Tmask</span><span class="o">*</span><span class="p">(</span><span class="n">Tactivate_</span> <span class="o">-</span> <span class="n">T</span><span class="p">)</span><span class="p">,</span>
+                <span class="n">dimensionedScalar</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">T0</span><span class="s">"</span><span class="p">,</span> <span class="n">dimTemperature</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+			<span class="c1">//Schrage模型给出的相变速率，单位为kg/m^2 s
+</span><span class="c1"></span>        <span class="n">volScalarField</span> <span class="nf">massFluxEvap</span>
+        <span class="p">(</span>
+            <span class="sa"></span><span class="s">"</span><span class="s">massFluxEvap</span><span class="s">"</span><span class="p">,</span>
+            <span class="mi">2</span><span class="o">*</span><span class="n">mag</span><span class="p">(</span><span class="n">C_</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">mag</span><span class="p">(</span><span class="n">C_</span><span class="p">)</span><span class="p">)</span>
+          <span class="o">*</span> <span class="n">HerztKnudsConst</span>
+          <span class="o">*</span> <span class="n">L</span><span class="p">(</span><span class="p">)</span>
+          <span class="o">*</span> <span class="n">rhom</span>
+          <span class="o">*</span> <span class="n">tDelta</span>
+        <span class="p">)</span><span class="p">;</span>
+
+        <span class="c1">// 'from' phase normalization
+</span><span class="c1"></span>        <span class="c1">// WIP: Normalization could be convinient for cases where the area were
+</span><span class="c1"></span>        <span class="c1">// the source term is calculated is uniform
+</span><span class="c1"></span>      <span class="c1">//这里是特征长度，界面面积/某一相占的体积，单位是m^-1
+</span><span class="c1"></span>        <span class="k">const</span> <span class="n">dimensionedScalar</span> <span class="nf">Nl</span>
+        <span class="p">(</span>
+            <span class="n">gSum</span><span class="p">(</span><span class="p">(</span><span class="n">areaDensity</span><span class="o">*</span><span class="n">mesh</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+           <span class="o">/</span><span class="p">(</span>
+               <span class="n">gSum</span>
+               <span class="p">(</span>
+                   <span class="p">(</span><span class="p">(</span><span class="n">areaDensity</span><span class="o">*</span><span class="n">from</span><span class="p">)</span><span class="o">*</span><span class="n">mesh</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">(</span><span class="p">)</span>
+               <span class="p">)</span>
+             <span class="o">+</span> <span class="n">dimensionedScalar</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">SMALL</span><span class="s">"</span><span class="p">,</span> <span class="n">dimless</span><span class="p">,</span> <span class="n">VSMALL</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">outputTime</span><span class="p">(</span><span class="p">)</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">debug</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">areaDensity</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+            <span class="n">Tmask</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+            <span class="n">volScalarField</span> <span class="nf">mKGasDot</span>
+            <span class="p">(</span>
+                <span class="sa"></span><span class="s">"</span><span class="s">mKGasDot</span><span class="s">"</span><span class="p">,</span>
+                <span class="n">massFluxEvap</span><span class="o">*</span><span class="n">areaDensity</span><span class="o">*</span><span class="n">Nl</span><span class="o">*</span><span class="n">from</span>
+            <span class="p">)</span><span class="p">;</span>
+            <span class="n">mKGasDot</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+			<span class="c1">//返回可以用在计算模型中的相变速率，kg/m^3 s
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">massFluxEvap</span><span class="o">*</span><span class="n">areaDensity</span><span class="o">*</span><span class="n">Nl</span><span class="o">*</span><span class="n">from</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span> <span class="p">(</span><span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>总结下来这里有几处处理值得借鉴：</p>
+<ol>
+<li>
+<p>使用mask将相变地点发生在界面上。</p>
+</li>
+<li>
+<p>用了Nl来使模型输出应用在模型中。（常见做法）</p>
+</li>
+<li>
+<p>用了大量的判断来保证相变的方向正确。</p>
+</li>
+<li>
+<p>将相方程RHS处理成源项的格式</p>
+</li>
+</ol>
+<p>下面分项分析：</p>
+<ol>
+<li><code>forAll(List, i)</code>第一个参数是一个<code>List</code>，温度<code>volScalarField也</code>是一个<code>List</code>，包含了所有的体心网格列表，<code>i</code>表示每次循环中读取到的网格。这里是对各相的导数进行判断，乘积不为0即说明在界面区域，然后判断两相分数之和是否到达了设定的阈值，随后将<code>Tmask</code>设为1，之后在讲这个mask与<code>T-Tsat</code>相乘，达到了限定相变位置的目的。但是<code>iCEF</code>中使用的<code>interfaceProperties</code>提供了<code>nearInterface()</code>的方法，虽然在相变模型中不好直接访问，但可以直接用alpha场构建类似的mask。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">	<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">volScalarField</span><span class="o">&gt;</span>
+	<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">interfaceProperties</span><span class="o">:</span><span class="o">:</span><span class="n">nearInterface</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
+	<span class="p">{</span>
+	<span class="k">return</span> <span class="nf">pos0</span><span class="p">(</span><span class="n">alpha1_</span> <span class="o">-</span> <span class="mf">0.01</span><span class="p">)</span><span class="o">*</span><span class="n">pos0</span><span class="p">(</span><span class="mf">0.99</span> <span class="o">-</span> <span class="n">alpha1_</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ol start="2">
+<li>这个式子从原理上是正确的，见iCEF分析，只是这个表达式可以有更多的改进。</li>
+</ol>
+<p>详见论文“An algorithm to calculate interfacial area for multiphase mass transfer through the volume-of-fluid method ”</p>
+<ol start="3">
+<li>因为这里涉及到多相之间的相变，而本例不需要考虑这么多，应用时根据情况判断是否要考虑的这么仔细。</li>
+<li><code>iCEF</code>中处理成<code>mdotAlphal</code>的方式确实很蠢，如果代码变动方便的话应该考虑处理成<code>Su</code>，<code>Sp</code>的格式。这里对于压力方程中不需做太多更改，仅需改变相方程，然后将<code>Alhpal</code>结尾的方法改成使用源项。</li>
+</ol>
+</div>
+<div class="post-copyright">
+<p class="copyright-item">
+<span class="item-title">Author</span>
+<span class="item-content">ZZQ</span>
+</p>
+<p class="copyright-item">
+<span class="item-title">LastMod</span>
+<span class="item-content">
+        Thursday, February 27, 2020
+        
+    </span>
+</p>
+</div>
+<footer class="post-footer">
+<div class="post-tags">
+<a href="/tags/ec/">E&amp;C</a>
+<a href="/tags/openfoam/">OpenFOAM</a>
+<a href="/tags/code/">code</a>
+</div>
+<nav class="post-nav">
+<a class="next" href="/post/loveletter/">
+<span class="next-text nav-default">Loveletter</span>
+<span class="next-text nav-mobile">Next</span>
+<i class="iconfont icon-right"></i>
+</a>
+</nav>
+</footer>
+</article>
+</div>
+</div>
+</main>
+<footer class="footer" id="footer">
+<div class="social-links">
+<a class="iconfont icon-email" href="mailto:zuozqi@sjtu.edu.cn" title="email"></a>
+<a class="iconfont icon-rss" href="http://localhost:1313/index.xml" title="rss" type="application/rss+xml"></a>
+</div>
+<div class="copyright">
+<span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+</span>
+<span class="division">|</span>
+<span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+</span>
+<span class="copyright-year">
+    © 
+    2020
+    <span class="heart">
+<i class="iconfont icon-heart"></i>
+</span>
+<span class="author">ZZQ</span>
+</span>
+</div>
+</footer>
+<div class="back-to-top" id="back-to-top">
+<i class="iconfont icon-up"></i>
+</div>
+</div>
+<script crossorigin="anonymous" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js"></script>
+<script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script src="/dist/even.26188efa.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+    window.MathJax = {
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+      TeX: {equationNumbers: {autoNumber: "AMS"}},
+      showProcessingMessages: false,
+      messageStyle: 'none'
+    };
+  </script>
+<script async="" crossorigin="anonymous" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>
