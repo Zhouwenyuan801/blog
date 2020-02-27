@@ -32,7 +32,7 @@
 <meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" itemprop="description"/>
 <meta content="2020-02-27T13:03:32+08:00" itemprop="datePublished"/>
 <meta content="2020-02-27T13:03:32+08:00" itemprop="dateModified"/>
-<meta content="3896" itemprop="wordCount"/>
+<meta content="3909" itemprop="wordCount"/>
 <meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
 <meta content="IRMIF中蒸发冷凝模型实现方式" name="twitter:title"/>
 <meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" name="twitter:description"/>
@@ -98,7 +98,7 @@
 <div class="post-category">
 <a href="/categories/openfoam/"> OpenFOAM </a>
 </div>
-<span class="more-meta"> 3896 words </span>
+<span class="more-meta"> 3909 words </span>
 <span class="more-meta"> 8 mins read </span>
 </div>
 </header>
@@ -109,6 +109,7 @@
 <ul>
 <li><a href="#总览">总览</a></li>
 <li><a href="#求解器整体框架分析">求解器整体框架分析</a></li>
+<li><a href="#模型相变框架">模型相变框架</a></li>
 </ul>
 </nav>
 </div>
@@ -172,7 +173,9 @@
 <span class="n">multiphaseSystem</span><span class="o">&amp;</span> <span class="n">fluid</span> <span class="o">=</span> <span class="n">fluidPtr</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>这种调用方式说明这其实是RTS动态选取的类，在后文中有介绍。<code>multiphaseSystem.h</code>文件在<code>phaseSystem</code>文件夹内，而<code>multiphaseSystem</code>也是前者的子类。下面先看<code>phaseSystem</code>类的构造，其继承自<code>basicThermo</code>和<code>compressibleTransportModel</code>，并包含有两相体系表、相模型表、表面张力模型表、界面多孔模型表等Hash表。这些表记录了特定体系中使用的具体方法。而<code>multiphaseSystem</code>类中多定义了</p>
+</div><p>这种调用方式说明这其实是RTS动态选取的类，在后文中有介绍。<code>multiphaseSystem.h</code>文件在<code>phaseSystem</code>文件夹内，而<code>multiphaseSystem</code>也是前者的子类。下面先看<code>phaseSystem</code>类的构造，其继承自<code>basicThermo</code>和<code>compressibleTransportModel</code>，并包含有两相体系表、相模型表、表面张力模型表、界面多孔模型表等Hash表。这些表记录了特定体系中使用的具体方法。</p>
+<h2 id="模型相变框架">模型相变框架</h2>
+<p><code>multiphaseSystem</code>类中多定义了</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt"> 1
@@ -628,6 +631,7 @@ $$</p>
 </code></pre></td></tr></table>
 </div>
 </div><p>calculateL()的作用只是返回潜热，对于热量的计算与<code>iCEF</code>相似。可见，这里最终表示传质速率的是<code>interfaceComposition</code>类的<code>Kexp()</code>方法。<code>massTransferModelTable</code>存储的也正是这个类的对象。</p>
+<p>##相变模型选取</p>
 <p>注意，源代码在<code>massTransferModels</code>文件夹内有<code>interfaceCompositionModel</code>和<code>InterfaceCompositionModle</code>，拷贝到不区分大小写的系统会损失部分代码。这里有一些细节同样不考虑，只看<code>Kexp()</code>。作为模版类，<code>interfaceCompositionModel</code>只提供纯虚的<code>Kexp()</code>方法，派生出<code>Lee</code>，<code>kineticGassEvaporation</code>（其实是简化后的Schrage）两种相变模型。下面只看Schrage：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">

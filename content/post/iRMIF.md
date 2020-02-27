@@ -54,7 +54,11 @@ autoPtr<multiphaseSystem> fluidPtr = multiphaseSystem::New(mesh);
 multiphaseSystem& fluid = fluidPtr();
 ```
 
-这种调用方式说明这其实是RTS动态选取的类，在后文中有介绍。`multiphaseSystem.h`文件在`phaseSystem`文件夹内，而`multiphaseSystem`也是前者的子类。下面先看`phaseSystem`类的构造，其继承自`basicThermo`和`compressibleTransportModel`，并包含有两相体系表、相模型表、表面张力模型表、界面多孔模型表等Hash表。这些表记录了特定体系中使用的具体方法。而`multiphaseSystem`类中多定义了
+这种调用方式说明这其实是RTS动态选取的类，在后文中有介绍。`multiphaseSystem.h`文件在`phaseSystem`文件夹内，而`multiphaseSystem`也是前者的子类。下面先看`phaseSystem`类的构造，其继承自`basicThermo`和`compressibleTransportModel`，并包含有两相体系表、相模型表、表面张力模型表、界面多孔模型表等Hash表。这些表记录了特定体系中使用的具体方法。
+
+## 模型相变框架
+
+`multiphaseSystem`类中多定义了
 
 ```c++
 //- Maximum volumen rate change
@@ -307,7 +311,7 @@ Foam::MassTransferPhaseSystem<BasePhaseSystem>::heatTransfer
 
 calculateL()的作用只是返回潜热，对于热量的计算与`iCEF`相似。可见，这里最终表示传质速率的是`interfaceComposition`类的`Kexp()`方法。`massTransferModelTable`存储的也正是这个类的对象。
 
-
+##相变模型选取
 
 注意，源代码在`massTransferModels`文件夹内有`interfaceCompositionModel`和`InterfaceCompositionModle`，拷贝到不区分大小写的系统会损失部分代码。这里有一些细节同样不考虑，只看`Kexp()`。作为模版类，`interfaceCompositionModel`只提供纯虚的`Kexp()`方法，派生出`Lee`，`kineticGassEvaporation`（其实是简化后的Schrage）两种相变模型。下面只看Schrage：
 
