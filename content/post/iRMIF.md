@@ -1,4 +1,5 @@
 ---
+
 title: "IRMIF中蒸发冷凝模型实现方式"
 date: 2020-02-27T13:03:32+08:00
 lastmod: 2020-02-27T13:03:32+08:00
@@ -313,7 +314,17 @@ calculateL()的作用只是返回潜热，对于热量的计算与`iCEF`相似�
 
 ##相变模型选取
 
-注意，源代码在`massTransferModels`文件夹内有`interfaceCompositionModel`和`InterfaceCompositionModle`，拷贝到不区分大小写的系统会损失部分代码。这里有一些细节同样不考虑，只看`Kexp()`。作为模版类，`interfaceCompositionModel`只提供纯虚的`Kexp()`方法，派生出`Lee`，`kineticGassEvaporation`（其实是简化后的Schrage）两种相变模型。下面只看Schrage：
+注意，源代码在`massTransferModels`文件夹内有`interfaceCompositionModel`和`InterfaceCompositionModle`，拷贝到不区分大小写的系统会损失部分代码。这里有一些细节同样不考虑，只看`Kexp()`。作为模版类，`interfaceCompositionModel`只提供纯虚的`Kexp()`方法，派生出`Lee`，`kineticGassEvaporation`（其实是简化后的Schrage）两种相变模型。下面只看Schrage，该模型表示相变速率为：
+$$
+\dot{m} = \frac{2}{2-\sigma_c} \sqrt{\frac{M}{2\pi R}} \left[\sigma_c \frac{p_g}{\sqrt{T_{g,sat}}} - \sigma_e \frac{p_l}{\sqrt{T_{l,sat}}} \right ]
+$$
+这里使用的公式是：
+$$
+\dot{m} = \frac{2}{2-\sigma_c} \sqrt{\frac{M}{2\pi R T_{sat}^3}} h_{fg} (T-T_{sat})\frac{\rho_l\rho_g}{\rho_l - \rho_g}
+$$
+依据是：Tanasawa, Advances in condensation heat transfer, in: J.P. Hartnett, T.F. Irvine (Eds.), Advances in Heat Transfer, Academic Press, San Diego, 1991. 
+
+这是一种简化版的Schrage。
 
 ```c++
 template<class Thermo, class OtherThermo>
@@ -332,7 +343,7 @@ Foam::meltingEvaporationModels::kineticGasEvaporation<Thermo, OtherThermo>
 		//上一步的温度场
         const volScalarField& T =
             mesh.lookupObject<volScalarField>("T").oldTime();
-		//HK方程前面的系数 \sqrt{\frac{M}{2\pi R T}
+		//HK方程前面的系数 \sqrt{\frac{M}{2\pi R T^3}
         const dimensionedScalar HerztKnudsConst
         (
             sqrt

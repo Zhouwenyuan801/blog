@@ -32,7 +32,7 @@
 <meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" itemprop="description"/>
 <meta content="2020-02-27T13:03:32+08:00" itemprop="datePublished"/>
 <meta content="2020-02-27T13:03:32+08:00" itemprop="dateModified"/>
-<meta content="3909" itemprop="wordCount"/>
+<meta content="4004" itemprop="wordCount"/>
 <meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
 <meta content="IRMIF中蒸发冷凝模型实现方式" name="twitter:title"/>
 <meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" name="twitter:description"/>
@@ -98,7 +98,7 @@
 <div class="post-category">
 <a href="/categories/openfoam/"> OpenFOAM </a>
 </div>
-<span class="more-meta"> 3909 words </span>
+<span class="more-meta"> 4004 words </span>
 <span class="more-meta"> 8 mins read </span>
 </div>
 </header>
@@ -632,7 +632,16 @@ $$</p>
 </div>
 </div><p>calculateL()的作用只是返回潜热，对于热量的计算与<code>iCEF</code>相似。可见，这里最终表示传质速率的是<code>interfaceComposition</code>类的<code>Kexp()</code>方法。<code>massTransferModelTable</code>存储的也正是这个类的对象。</p>
 <p>##相变模型选取</p>
-<p>注意，源代码在<code>massTransferModels</code>文件夹内有<code>interfaceCompositionModel</code>和<code>InterfaceCompositionModle</code>，拷贝到不区分大小写的系统会损失部分代码。这里有一些细节同样不考虑，只看<code>Kexp()</code>。作为模版类，<code>interfaceCompositionModel</code>只提供纯虚的<code>Kexp()</code>方法，派生出<code>Lee</code>，<code>kineticGassEvaporation</code>（其实是简化后的Schrage）两种相变模型。下面只看Schrage：</p>
+<p>注意，源代码在<code>massTransferModels</code>文件夹内有<code>interfaceCompositionModel</code>和<code>InterfaceCompositionModle</code>，拷贝到不区分大小写的系统会损失部分代码。这里有一些细节同样不考虑，只看<code>Kexp()</code>。作为模版类，<code>interfaceCompositionModel</code>只提供纯虚的<code>Kexp()</code>方法，派生出<code>Lee</code>，<code>kineticGassEvaporation</code>（其实是简化后的Schrage）两种相变模型。下面只看Schrage，该模型表示相变速率为：
+$$
+\dot{m} = \frac{2}{2-\sigma_c} \sqrt{\frac{M}{2\pi R}} \left[\sigma_c \frac{p_g}{\sqrt{T_{g,sat}}} - \sigma_e \frac{p_l}{\sqrt{T_{l,sat}}} \right ]
+$$
+这里使用的公式是：
+$$
+\dot{m} = \frac{2}{2-\sigma_c} \sqrt{\frac{M}{2\pi R T_{sat}^3}} h_{fg} (T-T_{sat})\frac{\rho_l\rho_g}{\rho_l - \rho_g}
+$$
+依据是：Tanasawa, Advances in condensation heat transfer, in: J.P. Hartnett, T.F. Irvine (Eds.), Advances in Heat Transfer, Academic Press, San Diego, 1991.</p>
+<p>这是一种简化版的Schrage。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">  1
@@ -821,7 +830,7 @@ $$</p>
 		<span class="c1">//上一步的温度场
 </span><span class="c1"></span>        <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">T</span> <span class="o">=</span>
             <span class="n">mesh</span><span class="p">.</span><span class="n">lookupObject</span><span class="o">&lt;</span><span class="n">volScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">T</span><span class="s">"</span><span class="p">)</span><span class="p">.</span><span class="n">oldTime</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
-		<span class="c1">//HK方程前面的系数 \sqrt{\frac{M}{2\pi R T}
+		<span class="c1">//HK方程前面的系数 \sqrt{\frac{M}{2\pi R T^3}
 </span><span class="c1"></span>        <span class="k">const</span> <span class="n">dimensionedScalar</span> <span class="nf">HerztKnudsConst</span>
         <span class="p">(</span>
             <span class="n">sqrt</span>
