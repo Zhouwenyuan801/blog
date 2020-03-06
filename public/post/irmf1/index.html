@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
-<title>IRMIF中的多流体模型（一） - MrZZQi's Blog</title>
+<title>IRMIF中的多流体模型 - MrZZQi's Blog</title>
 <meta content="webkit" name="renderer"/>
 <meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport"/>
 <meta content="no-transform" http-equiv="Cache-Control"/>
@@ -22,19 +22,19 @@
 <link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon"/>
 <link href="/dist/even.c2a46f00.min.css" rel="stylesheet"/>
 <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" rel="stylesheet"/>
-<meta content="IRMIF中的多流体模型（一）" property="og:title"/>
+<meta content="IRMIF中的多流体模型" property="og:title"/>
 <meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" property="og:description"/>
 <meta content="article" property="og:type"/>
 <meta content="http://localhost:1313/post/irmf1/" property="og:url"/>
 <meta content="2020-03-04T15:34:30+08:00" property="article:published_time"/>
 <meta content="2020-03-04T15:34:30+08:00" property="article:modified_time"/>
-<meta content="IRMIF中的多流体模型（一）" itemprop="name"/>
+<meta content="IRMIF中的多流体模型" itemprop="name"/>
 <meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" itemprop="description"/>
 <meta content="2020-03-04T15:34:30+08:00" itemprop="datePublished"/>
 <meta content="2020-03-04T15:34:30+08:00" itemprop="dateModified"/>
-<meta content="5440" itemprop="wordCount"/>
+<meta content="8540" itemprop="wordCount"/>
 <meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
-<meta content="IRMIF中的多流体模型（一）" name="twitter:title"/>
+<meta content="IRMIF中的多流体模型" name="twitter:title"/>
 <meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" name="twitter:description"/>
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -92,14 +92,14 @@
 <div class="content" id="content">
 <article class="post">
 <header class="post-header">
-<h1 class="post-title">IRMIF中的多流体模型（一）</h1>
+<h1 class="post-title">IRMIF中的多流体模型</h1>
 <div class="post-meta">
 <span class="post-time"> Wednesday, March 4, 2020 </span>
 <div class="post-category">
 <a href="/categories/openfoam/"> OpenFOAM </a>
 </div>
-<span class="more-meta"> 5440 words </span>
-<span class="more-meta"> 11 mins read </span>
+<span class="more-meta"> 8540 words </span>
+<span class="more-meta"> 18 mins read </span>
 </div>
 </header>
 <div class="post-toc" id="post-toc">
@@ -123,6 +123,7 @@
 <li><a href="#masstransferphasemodel">MassTransferPhaseModel</a></li>
 </ul>
 </li>
+<li><a href="#phasemodel构建">PhaseModel构建</a></li>
 </ul>
 </nav>
 </div>
@@ -145,7 +146,6 @@
 <li>求解器计算过程</li>
 <li>多流体模型</li>
 <li>相模型</li>
-<li>表面张力模型</li>
 </ol>
 <p>对于辐射模型和化学反应过程这里不关心。这篇争取解释好前两点。</p>
 <h2 id="求解器脉络">求解器脉络</h2>
@@ -800,7 +800,8 @@ $$
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="multiphasesystem的构建">multiphaseSystem的构建</h3>
+</div><p>同时，有关表面张力的计算也在<code>phaseSystem</code>中完成，比如计算曲率的<code>K()</code>，以及计算表面张力的<code>surfaceTension()</code>。定义的表面张力模型只是返回一个表面张力系数<code>sigma_</code></p>
+<h3 id="multiphasesystem的构建">multiphaseSystem的构建</h3>
 <p><code>multiphaseSystem</code>在调用<code>phaseSystem</code>构造函数的基础上，读取了一些MULES的控制参数，同时初始化了<code>Su</code>，<code>Sp</code>两张源项表。</p>
 <p>该类额外提供的功能包括</p>
 <ul>
@@ -931,6 +932,687 @@ $$
 </div>
 </div><p>该类中包含了全部的与计算传热相关的函数，比如计算潜热的<code>calculateL</code>，计算传热并切更新源项的<code>heatTransfer</code>，以及计算组分间传质的<code>massSpeciesTransfer</code>。</p>
 <p>至此，多流体模型的框架久搭建完成了。</p>
+<h2 id="phasemodel构建">PhaseModel构建</h2>
+<p><code>phaseModel</code>这个类在多流体模型中起到中坚的作用。多流体模型只是将各个相模型的物性加权求和后返回，真正确定流体物性的是<code>phaseModel</code>类。</p>
+<p>前文中提到，<code>phaseModel</code>是在<code>phaseSystem</code>构造函数中调用<code>generatePhaseModel</code>完成的，调用的是New函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">phaseModel</span><span class="o">&gt;</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">phaseModel</span><span class="o">:</span><span class="o">:</span><span class="n">New</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">phaseSystem</span><span class="o">&amp;</span> <span class="n">fluid</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">word</span><span class="o">&amp;</span> <span class="n">phaseName</span>
+<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="n">dictionary</span><span class="o">&amp;</span> <span class="n">dict</span> <span class="o">=</span> <span class="n">fluid</span><span class="p">.</span><span class="n">subDict</span><span class="p">(</span><span class="n">phaseName</span><span class="p">)</span><span class="p">;</span> <span class="c1">//读取相名对应的子字典
+</span><span class="c1"></span>
+    <span class="k">const</span> <span class="n">word</span> <span class="nf">modelType</span><span class="p">(</span><span class="n">dict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">type</span><span class="s">"</span><span class="p">)</span><span class="p">)</span><span class="p">;</span> <span class="c1">//获得给定的相模型名称
+</span><span class="c1"></span>
+    <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Selecting phaseModel for </span><span class="s">"</span>
+        <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">phaseName</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">: </span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">modelType</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+
+    <span class="k">const</span> <span class="k">auto</span> <span class="n">cstrIter</span> <span class="o">=</span> <span class="n">phaseSystemConstructorTablePtr_</span><span class="o">-</span><span class="o">&gt;</span><span class="n">cfind</span><span class="p">(</span><span class="n">modelType</span><span class="p">)</span><span class="p">;</span> <span class="c1">//在RTS表中寻找对应类的New指针
+</span><span class="c1"></span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cstrIter</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">FatalIOErrorInLookup</span>
+        <span class="p">(</span>
+            <span class="n">dict</span><span class="p">,</span>
+            <span class="sa"></span><span class="s">"</span><span class="s">phaseModel</span><span class="s">"</span><span class="p">,</span>
+            <span class="n">modelType</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">phaseSystemConstructorTablePtr_</span>
+        <span class="p">)</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">exit</span><span class="p">(</span><span class="n">FatalIOError</span><span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nf">cstrIter</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="n">fluid</span><span class="p">,</span> <span class="n">phaseName</span><span class="p">)</span><span class="p">;</span><span class="c1">//返回相模型指针
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>例程中给出的形式为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">liquid</span>
+<span class="p">{</span>
+    <span class="n">type</span>            <span class="n">pureMovingPhaseModel</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">gas</span>
+<span class="p">{</span>
+    <span class="n">type</span>            <span class="n">multiComponentMovingPhaseModel</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这两个类别是在<code>phaseModels.C</code>中定义的，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">makePhaseTypes</span>
+<span class="p">(</span>
+    <span class="n">MovingPhaseModel</span><span class="p">,</span>
+    <span class="n">PurePhaseModel</span><span class="p">,</span>
+    <span class="n">phaseModel</span><span class="p">,</span>
+    <span class="n">rhoThermo</span><span class="p">,</span>
+    <span class="n">pureMovingPhaseModel</span> <span class="c1">// Name of the phase type
+</span><span class="c1"></span><span class="p">)</span><span class="p">;</span>
+<span class="n">makePhaseTypes</span>
+<span class="p">(</span>
+    <span class="n">MovingPhaseModel</span><span class="p">,</span>
+    <span class="n">MultiComponentPhaseModel</span><span class="p">,</span>
+    <span class="n">phaseModel</span><span class="p">,</span>
+    <span class="n">rhoReactionThermo</span><span class="p">,</span>
+    <span class="n">multiComponentMovingPhaseModel</span>
+<span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>makePhaseTypes</code>是在<code>makePhaseTypes.H</code>中定义的宏，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#</span><span class="cp">define makePhaseTypes(MomemtumType, CompType, Phase, Thermo, Name)         \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">                                                                            \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">    namespace Foam                                                          \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">    {                                                                       \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">        typedef Foam::MomemtumType                                          \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">        &lt;                                                                   \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">            Foam::CompType                                                  \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">            &lt;                                                               \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">                Foam::Phase,                                                \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">                Foam::Thermo                                                \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">            &gt;                                                               \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">        &gt;                                                                   \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">        Name;                                                               \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">                                                                            \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">        addNamedToRunTimeSelectionTable                                     \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">        (                                                                   \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">            phaseModel,                                                     \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">            Name,                                                           \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">            phaseSystem,                                                    \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">            Name                                                            \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">        );                                                                  \</span><span class="cp">
+</span><span class="cp"></span><span class="cp">    }</span><span class="cp">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>该宏声明特定类的继承关系，并加入RTS表中。以<code>multiComponentMovingPhaseModel</code>为例，其完整的类型应该是<code>MovingPhaseModel&lt;MultiComponentPhaseModel&lt;phaseModel, rhoReactionThermo&gt;&gt; multiComponentMovingPhaseModel</code> 。</p>
+<p>从内向外分析，<code>phaseModel</code>是上述模型基类，通过读取时间步文件夹内的<code>alpha.(phaseName)</code>初始化。该类中定义了几乎所有的物性参数，包括<code>alpha</code>（热扩散系数），<code>rho</code>（密度），<code>Cp</code>（定压比热），<code>Cv</code>（定容比热），<code>Cpv</code>，<code>CpByCpv</code>，<code>nu</code>（粘度），<code>Y</code>（组分场），<code>phi</code>（体积通量），<code>alphaPhi</code>（相体积通量），<code>U</code>。但是全部的物性都是通过<code>thermo()</code>获得的，比如比热，<code>return thermo().Cp();</code>。而<code>thermo()</code>是纯虚函数，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">virtual</span> <span class="k">const</span> <span class="n">rhoThermo</span><span class="o">&amp;</span> <span class="n">thermo</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>因此，<code>phaseModel</code>类虽定义了相分数场，但是物性需具体实例化后才能获取。</p>
+<p><code>rhoReactionThermo</code>继承自<code>rhoThermo</code>，定义了纯虚函数<code>composition()</code>，用以返回混合物中的组分。在构造时，调用的是<code>basicThermo::New&lt;rhoReactionThermo&gt;(mesh, phaseName, dictName)</code>。</p>
+<p><code>rhoThermo</code>继承自<code>fluidThermo</code>，定义了密度、粘度和压缩性的成员变量，并给出了数据接口。</p>
+<p><code>fluidThermo</code>继承自<code>basicThermo</code>和<code>compressibleTranspooortModel</code>，给出了粘度的定义。</p>
+<p><code>basicThermo</code>继承自<code>IOdictionary</code>，存储了压力，温度的引用，同时定义了热扩散系数，相名称，以及包括比热等纯虚的数据接口。除此之外，还定义了一些返回字符的函数，例如</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">static</span> <span class="n">word</span> <span class="nf">phasePropertyName</span>
+  <span class="p">(</span>
+  <span class="k">const</span> <span class="n">word</span><span class="o">&amp;</span> <span class="n">name</span><span class="p">,</span>
+  <span class="k">const</span> <span class="n">word</span><span class="o">&amp;</span> <span class="n">phaseName</span>
+<span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">groupName</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">phaseName</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">word</span> <span class="nf">phasePropertyName</span><span class="p">(</span><span class="k">const</span> <span class="n">word</span><span class="o">&amp;</span> <span class="n">name</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">basicThermo</span><span class="o">:</span><span class="o">:</span><span class="n">phasePropertyName</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">phaseName_</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">const</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">word</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">basicThermo</span><span class="o">:</span><span class="o">:</span><span class="n">dictName</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">thermophysicalProperties</span><span class="s">"</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这些是为了后续方便。</p>
+<p>那么回头看一下构造时调用的New函数，该方法定义在<code>basicThermoTemplate.C</code>中，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">        <span class="n">phaseThermo</span><span class="o">:</span><span class="o">:</span><span class="n">New</span> <span class="c1">//MultiComponentPhaseModel中调用的构造函数
+</span><span class="c1"></span>        <span class="p">(</span>
+            <span class="n">fluid</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+            <span class="n">phaseName</span><span class="p">,</span>
+            <span class="n">basicThermo</span><span class="o">:</span><span class="o">:</span><span class="n">phasePropertyName</span><span class="p">(</span><span class="n">basicThermo</span><span class="o">:</span><span class="o">:</span><span class="n">dictName</span><span class="p">,</span> <span class="n">phaseName</span><span class="p">)</span>
+        <span class="p">)</span><span class="p">.</span><span class="n">ptr</span><span class="p">(</span><span class="p">)</span>
+ 
+<span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Thermo</span><span class="o">&gt;</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">Thermo</span><span class="o">&gt;</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">basicThermo</span><span class="o">:</span><span class="o">:</span><span class="n">New</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">fvMesh</span><span class="o">&amp;</span> <span class="n">mesh</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">word</span><span class="o">&amp;</span> <span class="n">phaseName</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">word</span><span class="o">&amp;</span> <span class="n">dictName</span>
+<span class="p">)</span>
+<span class="p">{</span>
+  	<span class="n">IOdictionary</span> <span class="nf">thermoDict</span>
+    <span class="p">(</span>
+        <span class="n">IOobject</span>
+        <span class="p">(</span>
+            <span class="n">dictName</span><span class="p">,</span>
+            <span class="n">mesh</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">constant</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+            <span class="n">mesh</span><span class="p">,</span>
+            <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">MUST_READ_IF_MODIFIED</span><span class="p">,</span>
+            <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_WRITE</span><span class="p">,</span>
+            <span class="nb">false</span>
+        <span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="k">auto</span> <span class="n">cstrIter</span> <span class="o">=</span>
+        <span class="n">lookupThermo</span><span class="o">&lt;</span><span class="n">Thermo</span><span class="p">,</span> <span class="k">typename</span> <span class="n">Thermo</span><span class="o">:</span><span class="o">:</span><span class="n">fvMeshDictPhaseConstructorTable</span><span class="o">&gt;</span>
+        <span class="p">(</span>
+            <span class="n">thermoDict</span><span class="p">,</span>
+            <span class="n">Thermo</span><span class="o">:</span><span class="o">:</span><span class="n">fvMeshDictPhaseConstructorTablePtr_</span>
+        <span class="p">)</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">Thermo</span><span class="o">&gt;</span><span class="p">(</span><span class="n">cstrIter</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">phaseName</span><span class="p">,</span> <span class="n">dictName</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中参数<code>basicThermo::phasePropertyName(basicThermo::dictName, phaseName)</code>代入后是<code>thermophysicalProperties.gas/liquid</code>位于<code>constant</code>文件夹下。使用<code>lookupThermo</code>方法获得指针，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">     <span class="k">if</span> <span class="p">(</span><span class="n">thermoDict</span><span class="p">.</span><span class="n">isDict</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">thermoType</span><span class="s">"</span><span class="p">)</span><span class="p">)</span> <span class="c1">//判断文件中是否存在thermoType字段
+</span><span class="c1"></span>     <span class="p">{</span>
+         <span class="k">const</span> <span class="n">dictionary</span><span class="o">&amp;</span> <span class="n">thermoTypeDict</span> <span class="o">=</span> <span class="n">thermoDict</span><span class="p">.</span><span class="n">subDict</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">thermoType</span><span class="s">"</span><span class="p">)</span><span class="p">;</span>
+  
+         <span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Selecting thermodynamics package </span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">thermoTypeDict</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+  
+         <span class="k">if</span> <span class="p">(</span><span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">properties</span><span class="s">"</span><span class="p">)</span><span class="p">)</span> <span class="c1">//如果有properties关键字
+</span><span class="c1"></span>         <span class="p">{</span>
+             <span class="n">std</span><span class="o">:</span><span class="o">:</span><span class="n">initializer_list</span><span class="o">&lt;</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span><span class="o">&gt;</span> <span class="n">cmptNames</span>
+             <span class="p">{</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">type</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">mixture</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">properties</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">energy</span><span class="s">"</span>
+             <span class="p">}</span><span class="p">;</span>
+  
+             <span class="c1">// Construct the name of the thermo package from the components
+</span><span class="c1"></span>             <span class="k">const</span> <span class="n">word</span> <span class="nf">thermoTypeName</span>
+             <span class="p">(</span>
+                 <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">type</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">&lt;</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">mixture</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">&lt;</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">properties</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">,</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">energy</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s">"</span><span class="s">&gt;&gt;</span><span class="s">"</span>
+             <span class="p">)</span><span class="p">;</span>
+  
+             <span class="k">return</span> <span class="n">lookupThermo</span><span class="o">&lt;</span><span class="n">Thermo</span><span class="p">,</span> <span class="n">Table</span><span class="o">&gt;</span>
+             <span class="p">(</span>
+                 <span class="n">thermoTypeDict</span><span class="p">,</span>
+                 <span class="n">tablePtr</span><span class="p">,</span>
+                 <span class="n">cmptNames</span><span class="p">,</span>
+                 <span class="n">thermoTypeName</span>
+             <span class="p">)</span><span class="p">;</span>
+         <span class="p">}</span>
+         <span class="k">else</span>  <span class="c1">//若没有
+</span><span class="c1"></span>         <span class="p">{</span>
+             <span class="n">std</span><span class="o">:</span><span class="o">:</span><span class="n">initializer_list</span><span class="o">&lt;</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span><span class="o">&gt;</span> <span class="n">cmptNames</span>
+             <span class="p">{</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">type</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">mixture</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">transport</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">thermo</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">equationOfState</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">specie</span><span class="s">"</span><span class="p">,</span>
+                 <span class="sa"></span><span class="s">"</span><span class="s">energy</span><span class="s">"</span>
+             <span class="p">}</span><span class="p">;</span>
+  
+             <span class="c1">// Construct the name of the thermo package from the components
+</span><span class="c1"></span>             <span class="k">const</span> <span class="n">word</span> <span class="n">thermoTypeName</span> <span class="c1">//根据字典构建名称
+</span><span class="c1"></span>             <span class="p">(</span>
+                 <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">type</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">&lt;</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">mixture</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">&lt;</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">transport</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">&lt;</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">thermo</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">&lt;</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">equationOfState</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="sc">'</span><span class="sc">&lt;</span><span class="sc">'</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">specie</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s">"</span><span class="s">&gt;&gt;,</span><span class="s">"</span>
+               <span class="o">+</span> <span class="n">thermoTypeDict</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">energy</span><span class="s">"</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s">"</span><span class="s">&gt;&gt;&gt;</span><span class="s">"</span>
+             <span class="p">)</span><span class="p">;</span>
+  
+             <span class="k">return</span> <span class="n">lookupThermo</span><span class="o">&lt;</span><span class="n">Thermo</span><span class="p">,</span> <span class="n">Table</span><span class="o">&gt;</span> <span class="c1">//从表中返回名称对应的指针
+</span><span class="c1"></span>             <span class="p">(</span>
+                 <span class="n">thermoTypeDict</span><span class="p">,</span>
+                 <span class="n">tablePtr</span><span class="p">,</span>
+                 <span class="n">cmptNames</span><span class="p">,</span>
+                 <span class="n">thermoTypeName</span>
+             <span class="p">)</span><span class="p">;</span>
+         <span class="p">}</span>
+     <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可见返回的是有<code>thermoType</code>字典内关键字规定的特定类型的指针，例程中对应，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">thermoType</span>
+<span class="p">{</span>
+    <span class="n">type</span>            <span class="n">heRhoThermo</span><span class="p">;</span>
+    <span class="n">mixture</span>         <span class="n">multiComponentMixture</span><span class="p">;</span>
+    <span class="n">transport</span>       <span class="k">const</span><span class="p">;</span>
+    <span class="n">thermo</span>          <span class="n">hConst</span><span class="p">;</span>
+    <span class="n">equationOfState</span> <span class="n">incompressiblePerfectGas</span><span class="p">;</span>
+    <span class="n">specie</span>          <span class="n">specie</span><span class="p">;</span>
+    <span class="n">energy</span>          <span class="n">sensibleEnthalpy</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>关于hash表的构建，以及类的继承关系、读取指针有两篇文章写的更详细些<a href="http://xiaopingqiu.github.io/2016/06/25/thermophysics2/">[3]</a><a href="http://xiaopingqiu.github.io/2016/06/25/thermophysics3/">[4]</a>。以上述字典为例，最终构建的是，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">heRhoThermo</span>
+  <span class="o">&lt;</span>
+  	<span class="n">rhoThermo</span><span class="p">,</span>
+		<span class="n">multiComponentMixuture</span><span class="p">,</span>
+		<span class="o">&lt;</span>
+ <span class="n">constTransport</span><span class="o">&lt;</span><span class="n">species</span><span class="o">:</span><span class="o">:</span><span class="n">thermo</span><span class="o">&lt;</span><span class="n">hConstThermo</span><span class="o">&lt;</span><span class="n">imcompressiiblePerfectGas</span><span class="o">&lt;</span><span class="n">specie</span><span class="o">&gt;</span><span class="o">&gt;</span><span class="p">,</span><span class="n">sensibleInternalEnergy</span><span class="o">&gt;</span><span class="o">&gt;</span>
+      <span class="o">&gt;</span>
+  <span class="o">&gt;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>所以<code>phaseModel</code>中<code>thermo</code>指向的最终是<code>heRhoThermo</code>。<code>heRhoThermo</code>继承自<code>heThermo</code>，并以第一个模版参数为基类，第二个模版参数为<code>MixtureType</code>。到这里可能有点乱，需要明确的是，<code>rhoReactionThermo</code>调用了<code>basicThermo</code>的selector，构造了上面复杂的类，此外，还另外定义了一些方法。而其他的物性计算方法，有字段中给定的关键字确定。在给定关键字后，要在文件中给出各个物性需要的参数，以例程中气体为例，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">species</span>
+<span class="p">(</span>
+    <span class="n">air</span>
+    <span class="n">vapour</span>
+<span class="p">)</span><span class="p">;</span>
+
+<span class="n">inertSpecie</span> <span class="n">air</span><span class="p">;</span> <span class="c1">//惰性组分
+</span><span class="c1"></span>
+<span class="n">vapour</span>
+<span class="p">{</span>
+    <span class="n">specie</span>
+    <span class="p">{</span>
+        <span class="n">nMoles</span>      <span class="mi">1</span><span class="p">;</span>
+        <span class="n">molWeight</span>   <span class="mi">32</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">equationOfState</span> <span class="c1">//因为这里选的是不可压理想气体，需要给定参考压力
+</span><span class="c1"></span>    <span class="p">{</span>
+        <span class="n">pRef</span>         <span class="mf">1e5</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">thermodynamics</span>
+    <span class="p">{</span>
+        <span class="n">Hf</span>          <span class="mi">0</span><span class="p">;</span><span class="c1">//-1.338e7; //[J/kg]
+</span><span class="c1"></span>        <span class="n">Cp</span>          <span class="mf">935.5</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">transport</span> <span class="c1">//这里选用的是constant只需给定一个数
+</span><span class="c1"></span>    <span class="p">{</span>
+        <span class="n">mu</span>          <span class="mf">7e-06</span><span class="p">;</span>
+        <span class="n">Pr</span>          <span class="mf">0.7</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">air</span>
+<span class="p">{</span>
+    <span class="n">specie</span>
+    <span class="p">{</span>
+        <span class="n">nMoles</span>      <span class="mi">1</span><span class="p">;</span>
+        <span class="n">molWeight</span>   <span class="mf">28.9</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">equationOfState</span>
+    <span class="p">{</span>
+        <span class="n">pRef</span>         <span class="mf">1e5</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">thermodynamics</span>
+    <span class="p">{</span>
+        <span class="n">Hf</span>          <span class="mi">0</span><span class="p">;</span>
+        <span class="n">Cp</span>          <span class="mi">900</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">transport</span>
+    <span class="p">{</span>
+        <span class="n">mu</span>          <span class="mf">1.8e-05</span><span class="p">;</span>
+        <span class="n">Pr</span>          <span class="mf">0.7</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可选的物性方法为见官方文档<a href="https://cfd.direct/openfoam/user-guide/v6-thermophysical/">[5]</a>，更精确的，小范围的物性计算方法是在温度区间内使用多项式拟合，对应的需要将<code>transport</code>,<code>thermodynamic</code>,<code>equation of state</code>字段修改成<code>polynomial</code>,<code>hPolynomial</code>,<code>icoPolynomial</code>。</p>
+<p>抄录各个方法所需参数如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">transport</span>
+    <span class="p">{</span>
+        <span class="n">muCoeffs</span><span class="o">&lt;</span><span class="mi">8</span><span class="o">&gt;</span>     <span class="p">(</span> <span class="mi">1000</span> <span class="o">-</span><span class="mf">0.05</span> <span class="mf">0.003</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="p">)</span><span class="p">;</span>
+        <span class="n">kappaCoeffs</span><span class="o">&lt;</span><span class="mi">8</span><span class="o">&gt;</span>  <span class="p">(</span> <span class="mi">2000</span> <span class="o">-</span><span class="mf">0.15</span> <span class="mf">0.023</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>$$
+\mu  = 1000 - 0.05 T + 0.003 T^2
+$$</p>
+<p>$$
+\kappa = 2000 - 0.15 T + 0.023 T^2
+$$</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">thermodynamics</span>
+    <span class="p">{</span>
+        <span class="n">Hf</span>              <span class="mi">0</span><span class="p">;</span> <span class="c1">//Heat of formation
+</span><span class="c1"></span>        <span class="n">Sf</span>              <span class="mi">0</span><span class="p">;</span> <span class="c1">//Standard entropy
+</span><span class="c1"></span>        <span class="n">CpCoeffs</span><span class="o">&lt;</span><span class="mi">8</span><span class="o">&gt;</span>     <span class="p">(</span> <span class="mi">1000</span> <span class="o">-</span><span class="mf">0.05</span> <span class="mf">0.003</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>$$
+Cp = 1000 - 0.05 T + 0.003 T^2
+$$</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">		<span class="n">equationOfState</span>
+		<span class="p">{</span>
+        <span class="n">rhoCoeffs</span><span class="o">&lt;</span><span class="mi">8</span><span class="o">&gt;</span>    <span class="p">(</span> <span class="mi">1000</span> <span class="o">-</span><span class="mf">0.05</span> <span class="mf">0.003</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>$$
+\rho = 1000 - 0.05 T + 0.003 T^2
+$$</p>
+<p>多项式拟合的优点很突出：不需要很高的阶数在给定小区间内精度就很高，缺点是在大区间内精度急剧下降。</p>
+<p>完全创建<code>thermo</code>后，就完成了宏中<code>CompType</code>的创建，求解器中只有两类：<code>MultiCoponentPhaseModel</code>和<code>PurePhaseModel</code>分别对应混合物和纯质。这两个类进一步定义了相内组分场的计算和接口。纯质直接返回组分场<code>Y_</code>，而混合物通过<code>solveYi()</code>求解组分，前面已有分析。</p>
+<p>定义纯质或混合物后，这个类作为模版参数传入<code>MomentumType</code>中，本例中有<code>MovingPhaseModel</code>和<code>StaticPhaseModel</code>，对应的，就是流体和固体。固体中的速度，通量都为0，而流体中的返回的是注册在<code>mesh</code>中的速度、通量等。</p>
+<p>至此，完整的<code>phaseModel</code>就构建完成了。</p>
 </div>
 <div class="post-copyright">
 <p class="copyright-item">

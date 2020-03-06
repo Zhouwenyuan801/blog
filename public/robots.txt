@@ -11,9 +11,9 @@ Disallow: /post/irmf1/
 
 Disallow: /
 
-Disallow: /tags/openfoam/
-
 Disallow: /categories/openfoam/
+
+Disallow: /tags/openfoam/
 
 Disallow: /post/
 

@@ -1,5 +1,5 @@
 ---
-title: "IRMIF中的多流体模型（一）"
+title: "IRMIF中的多流体模型"
 date: 2020-03-04T15:34:30+08:00
 lastmod: 2020-03-04T15:34:30+08:00
 draft: false
@@ -29,7 +29,6 @@ author: "ZZQ"
 1. 求解器计算过程
 2. 多流体模型
 3. 相模型
-4. 表面张力模型
 
 对于辐射模型和化学反应过程这里不关心。这篇争取解释好前两点。
 
@@ -181,10 +180,10 @@ multiphaseSystem& fluid = fluidPtr();
 
 
 
-|          |                   multiPhaseSystem                   |                         phaseSystem                          |
-| :------: | :--------------------------------------------------: | :----------------------------------------------------------: |
-|   父类   |                     phaseSystem                      |        basicThermo, <br />compressibleTransportModel         |
-| 包含的表 | SuSpTable<br />scalarTable<br />compressionFluxTable | phasePairTable<br />phaseModelTable<br />sufaceTensionTable<br />interfacePorousTable |
+|          |                 multiPhaseSystem                 |                         phaseSystem                          |
+| :------: | :----------------------------------------------: | :----------------------------------------------------------: |
+|   父类   |                   phaseSystem                    |         basicThermo, <br>compressibleTransportModel          |
+| 包含的表 | SuSpTable<br>scalarTable<br>compressionFluxTable | phasePairTable<br>phaseModelTable<br>sufaceTensionTable<br>interfacePorousTable |
 
 从功能上讲，`phaseSystem`基本已经构建完成了多流体系统的框架，包括了体系内相对，相模型和子模型表。而`multiphaseSystem`虽然在名字上多了`multi`，但是增加的内容大多是与传热、求解相方程有关的，包括前述solve()`方法。
 
@@ -441,6 +440,8 @@ Foam::tmp<Foam::scalarField> Foam::phaseSystem::rho(const label patchI) const
 }
 ```
 
+同时，有关表面张力的计算也在`phaseSystem`中完成，比如计算曲率的`K()`，以及计算表面张力的`surfaceTension()`。定义的表面张力模型只是返回一个表面张力系数`sigma_`
+
 ### multiphaseSystem的构建
 
 `multiphaseSystem`在调用`phaseSystem`构造函数的基础上，读取了一些MULES的控制参数，同时初始化了`Su`，`Sp`两张源项表。
@@ -524,3 +525,393 @@ massTransferModel
 
 
 至此，多流体模型的框架久搭建完成了。
+
+## PhaseModel构建
+
+`phaseModel`这个类在多流体模型中起到中坚的作用。多流体模型只是将各个相模型的物性加权求和后返回，真正确定流体物性的是`phaseModel`类。
+
+前文中提到，`phaseModel`是在`phaseSystem`构造函数中调用`generatePhaseModel`完成的，调用的是New函数。
+
+```c++
+Foam::autoPtr<Foam::phaseModel> Foam::phaseModel::New
+(
+    const phaseSystem& fluid,
+    const word& phaseName
+)
+{
+    const dictionary& dict = fluid.subDict(phaseName); //读取相名对应的子字典
+
+    const word modelType(dict.get<word>("type")); //获得给定的相模型名称
+
+    Info<< "Selecting phaseModel for "
+        << phaseName << ": " << modelType << endl;
+
+    const auto cstrIter = phaseSystemConstructorTablePtr_->cfind(modelType); //在RTS表中寻找对应类的New指针
+
+    if (!cstrIter.found())
+    {
+        FatalIOErrorInLookup
+        (
+            dict,
+            "phaseModel",
+            modelType,
+            *phaseSystemConstructorTablePtr_
+        ) << exit(FatalIOError);
+    }
+
+    return cstrIter()(fluid, phaseName);//返回相模型指针
+}
+```
+
+例程中给出的形式为
+
+```c++
+liquid
+{
+    type            pureMovingPhaseModel;
+}
+
+gas
+{
+    type            multiComponentMovingPhaseModel;
+}
+```
+
+这两个类别是在`phaseModels.C`中定义的，
+
+```c++
+makePhaseTypes
+(
+    MovingPhaseModel,
+    PurePhaseModel,
+    phaseModel,
+    rhoThermo,
+    pureMovingPhaseModel // Name of the phase type
+);
+makePhaseTypes
+(
+    MovingPhaseModel,
+    MultiComponentPhaseModel,
+    phaseModel,
+    rhoReactionThermo,
+    multiComponentMovingPhaseModel
+);
+```
+
+`makePhaseTypes`是在`makePhaseTypes.H`中定义的宏，
+
+```c++
+#define makePhaseTypes(MomemtumType, CompType, Phase, Thermo, Name)         \
+                                                                            \
+    namespace Foam                                                          \
+    {                                                                       \
+        typedef Foam::MomemtumType                                          \
+        <                                                                   \
+            Foam::CompType                                                  \
+            <                                                               \
+                Foam::Phase,                                                \
+                Foam::Thermo                                                \
+            >                                                               \
+        >                                                                   \
+        Name;                                                               \
+                                                                            \
+        addNamedToRunTimeSelectionTable                                     \
+        (                                                                   \
+            phaseModel,                                                     \
+            Name,                                                           \
+            phaseSystem,                                                    \
+            Name                                                            \
+        );                                                                  \
+    }
+```
+
+该宏声明特定类的继承关系，并加入RTS表中。以`multiComponentMovingPhaseModel`为例，其完整的类型应该是`MovingPhaseModel<MultiComponentPhaseModel<phaseModel, rhoReactionThermo>> multiComponentMovingPhaseModel` 。
+
+从内向外分析，`phaseModel`是上述模型基类，通过读取时间步文件夹内的`alpha.(phaseName)`初始化。该类中定义了几乎所有的物性参数，包括`alpha`（热扩散系数），`rho`（密度），`Cp`（定压比热），`Cv`（定容比热），`Cpv`，`CpByCpv`，`nu`（粘度），`Y`（组分场），`phi`（体积通量），`alphaPhi`（相体积通量），`U`。但是全部的物性都是通过`thermo()`获得的，比如比热，`return thermo().Cp();`。而`thermo()`是纯虚函数，
+
+```c++
+virtual const rhoThermo& thermo() const = 0;
+```
+
+因此，`phaseModel`类虽定义了相分数场，但是物性需具体实例化后才能获取。
+
+`rhoReactionThermo`继承自`rhoThermo`，定义了纯虚函数`composition()`，用以返回混合物中的组分。在构造时，调用的是`basicThermo::New<rhoReactionThermo>(mesh, phaseName, dictName)`。
+
+`rhoThermo`继承自`fluidThermo`，定义了密度、粘度和压缩性的成员变量，并给出了数据接口。
+
+`fluidThermo`继承自`basicThermo`和`compressibleTranspooortModel`，给出了粘度的定义。
+
+`basicThermo`继承自`IOdictionary`，存储了压力，温度的引用，同时定义了热扩散系数，相名称，以及包括比热等纯虚的数据接口。除此之外，还定义了一些返回字符的函数，例如
+
+```c++
+static word phasePropertyName
+  (
+  const word& name,
+  const word& phaseName
+)
+{
+  return IOobject::groupName(name, phaseName);
+}
+
+word phasePropertyName(const word& name) const
+{
+  return basicThermo::phasePropertyName(name, phaseName_);
+}
+const Foam::word Foam::basicThermo::dictName("thermophysicalProperties");
+```
+
+这些是为了后续方便。
+
+那么回头看一下构造时调用的New函数，该方法定义在`basicThermoTemplate.C`中，
+
+```c++
+        phaseThermo::New //MultiComponentPhaseModel中调用的构造函数
+        (
+            fluid.mesh(),
+            phaseName,
+            basicThermo::phasePropertyName(basicThermo::dictName, phaseName)
+        ).ptr()
+ 
+template<class Thermo>
+Foam::autoPtr<Thermo> Foam::basicThermo::New
+(
+    const fvMesh& mesh,
+    const word& phaseName,
+    const word& dictName
+)
+{
+  	IOdictionary thermoDict
+    (
+        IOobject
+        (
+            dictName,
+            mesh.time().constant(),
+            mesh,
+            IOobject::MUST_READ_IF_MODIFIED,
+            IOobject::NO_WRITE,
+            false
+        )
+    );
+
+    auto cstrIter =
+        lookupThermo<Thermo, typename Thermo::fvMeshDictPhaseConstructorTable>
+        (
+            thermoDict,
+            Thermo::fvMeshDictPhaseConstructorTablePtr_
+        );
+
+    return autoPtr<Thermo>(cstrIter()(mesh, phaseName, dictName));
+}
+```
+
+其中参数`basicThermo::phasePropertyName(basicThermo::dictName, phaseName)`代入后是`thermophysicalProperties.gas/liquid`位于`constant`文件夹下。使用`lookupThermo`方法获得指针，
+
+```c++
+     if (thermoDict.isDict("thermoType")) //判断文件中是否存在thermoType字段
+     {
+         const dictionary& thermoTypeDict = thermoDict.subDict("thermoType");
+  
+         Info<< "Selecting thermodynamics package " << thermoTypeDict << endl;
+  
+         if (thermoTypeDict.found("properties")) //如果有properties关键字
+         {
+             std::initializer_list<const char*> cmptNames
+             {
+                 "type",
+                 "mixture",
+                 "properties",
+                 "energy"
+             };
+  
+             // Construct the name of the thermo package from the components
+             const word thermoTypeName
+             (
+                 thermoTypeDict.get<word>("type") + '<'
+               + thermoTypeDict.get<word>("mixture") + '<'
+               + thermoTypeDict.get<word>("properties") + ','
+               + thermoTypeDict.get<word>("energy") + ">>"
+             );
+  
+             return lookupThermo<Thermo, Table>
+             (
+                 thermoTypeDict,
+                 tablePtr,
+                 cmptNames,
+                 thermoTypeName
+             );
+         }
+         else  //若没有
+         {
+             std::initializer_list<const char*> cmptNames
+             {
+                 "type",
+                 "mixture",
+                 "transport",
+                 "thermo",
+                 "equationOfState",
+                 "specie",
+                 "energy"
+             };
+  
+             // Construct the name of the thermo package from the components
+             const word thermoTypeName //根据字典构建名称
+             (
+                 thermoTypeDict.get<word>("type") + '<'
+               + thermoTypeDict.get<word>("mixture") + '<'
+               + thermoTypeDict.get<word>("transport") + '<'
+               + thermoTypeDict.get<word>("thermo") + '<'
+               + thermoTypeDict.get<word>("equationOfState") + '<'
+               + thermoTypeDict.get<word>("specie") + ">>,"
+               + thermoTypeDict.get<word>("energy") + ">>>"
+             );
+  
+             return lookupThermo<Thermo, Table> //从表中返回名称对应的指针
+             (
+                 thermoTypeDict,
+                 tablePtr,
+                 cmptNames,
+                 thermoTypeName
+             );
+         }
+     }
+```
+
+可见返回的是有`thermoType`字典内关键字规定的特定类型的指针，例程中对应，
+
+```c++
+thermoType
+{
+    type            heRhoThermo;
+    mixture         multiComponentMixture;
+    transport       const;
+    thermo          hConst;
+    equationOfState incompressiblePerfectGas;
+    specie          specie;
+    energy          sensibleEnthalpy;
+}
+```
+
+关于hash表的构建，以及类的继承关系、读取指针有两篇文章写的更详细些[[3]](http://xiaopingqiu.github.io/2016/06/25/thermophysics2/)[[4]](http://xiaopingqiu.github.io/2016/06/25/thermophysics3/)。以上述字典为例，最终构建的是，
+
+```c++
+heRhoThermo
+  <
+  	rhoThermo,
+		multiComponentMixuture,
+		<
+ constTransport<species::thermo<hConstThermo<imcompressiiblePerfectGas<specie>>,sensibleInternalEnergy>>
+      >
+  >
+```
+
+所以`phaseModel`中`thermo`指向的最终是`heRhoThermo`。`heRhoThermo`继承自`heThermo`，并以第一个模版参数为基类，第二个模版参数为`MixtureType`。到这里可能有点乱，需要明确的是，`rhoReactionThermo`调用了`basicThermo`的selector，构造了上面复杂的类，此外，还另外定义了一些方法。而其他的物性计算方法，有字段中给定的关键字确定。在给定关键字后，要在文件中给出各个物性需要的参数，以例程中气体为例，
+
+```c++
+species
+(
+    air
+    vapour
+);
+
+inertSpecie air; //惰性组分
+
+vapour
+{
+    specie
+    {
+        nMoles      1;
+        molWeight   32;
+    }
+    equationOfState //因为这里选的是不可压理想气体，需要给定参考压力
+    {
+        pRef         1e5;
+    }
+    thermodynamics
+    {
+        Hf          0;//-1.338e7; //[J/kg]
+        Cp          935.5;
+    }
+    transport //这里选用的是constant只需给定一个数
+    {
+        mu          7e-06;
+        Pr          0.7;
+    }
+}
+
+air
+{
+    specie
+    {
+        nMoles      1;
+        molWeight   28.9;
+    }
+    equationOfState
+    {
+        pRef         1e5;
+    }
+    thermodynamics
+    {
+        Hf          0;
+        Cp          900;
+    }
+    transport
+    {
+        mu          1.8e-05;
+        Pr          0.7;
+    }
+}
+```
+
+可选的物性方法为见官方文档[[5]](https://cfd.direct/openfoam/user-guide/v6-thermophysical/)，更精确的，小范围的物性计算方法是在温度区间内使用多项式拟合，对应的需要将`transport`,`thermodynamic`,`equation of state`字段修改成`polynomial`,`hPolynomial`,`icoPolynomial`。
+
+抄录各个方法所需参数如下
+
+```c++
+    transport
+    {
+        muCoeffs<8>     ( 1000 -0.05 0.003 0 0 0 0 0 );
+        kappaCoeffs<8>  ( 2000 -0.15 0.023 0 0 0 0 0 );
+    }
+```
+
+$$
+\mu  = 1000 - 0.05 T + 0.003 T^2
+$$
+
+$$
+\kappa = 2000 - 0.15 T + 0.023 T^2
+$$
+
+
+
+```c++
+    thermodynamics
+    {
+        Hf              0; //Heat of formation
+        Sf              0; //Standard entropy
+        CpCoeffs<8>     ( 1000 -0.05 0.003 0 0 0 0 0 );
+    }
+```
+
+$$
+Cp = 1000 - 0.05 T + 0.003 T^2
+$$
+
+```c++
+		equationOfState
+		{
+        rhoCoeffs<8>    ( 1000 -0.05 0.003 0 0 0 0 0 );
+    }
+```
+
+$$
+\rho = 1000 - 0.05 T + 0.003 T^2
+$$
+
+多项式拟合的优点很突出：不需要很高的阶数在给定小区间内精度就很高，缺点是在大区间内精度急剧下降。
+
+完全创建`thermo`后，就完成了宏中`CompType`的创建，求解器中只有两类：`MultiCoponentPhaseModel`和`PurePhaseModel`分别对应混合物和纯质。这两个类进一步定义了相内组分场的计算和接口。纯质直接返回组分场`Y_`，而混合物通过`solveYi()`求解组分，前面已有分析。
+
+定义纯质或混合物后，这个类作为模版参数传入`MomentumType`中，本例中有`MovingPhaseModel`和`StaticPhaseModel`，对应的，就是流体和固体。固体中的速度，通量都为0，而流体中的返回的是注册在`mesh`中的速度、通量等。
+
+至此，完整的`phaseModel`就构建完成了。
