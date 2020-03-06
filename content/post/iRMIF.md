@@ -509,6 +509,8 @@ Foam::meltingEvaporationModels::kineticGasEvaporation<Thermo, OtherThermo>
 
 1. `forAll(List, i)`第一个参数是一个`List`，温度`volScalarField也`是一个`List`，包含了所有的体心网格列表，`i`表示每次循环中读取到的网格。这里是对各相的导数进行判断，乘积不为0即说明在界面区域，然后判断两相分数之和是否到达了设定的阈值，随后将`Tmask`设为1，之后在讲这个mask与`T-Tsat`相乘，达到了限定相变位置的目的。但是`iCEF`中使用的`interfaceProperties`提供了`nearInterface()`的方法，虽然在相变模型中不好直接访问，但可以直接用alpha场构建类似的mask。
 
+   > 经过测试，这里的`Tmask`将相变区域仅限值在气液相变区域，这导致纯液或纯气区域一直不会发生相变，例如加热平板上一直不会有气泡，这里考虑将这个限制去掉
+
 ```c++
 	Foam::tmp<Foam::volScalarField>
 	Foam::interfaceProperties::nearInterface() const
@@ -523,3 +525,6 @@ Foam::meltingEvaporationModels::kineticGasEvaporation<Thermo, OtherThermo>
 
 3. 因为这里涉及到多相之间的相变，而本例不需要考虑这么多，应用时根据情况判断是否要考虑的这么仔细。
 4. `iCEF`中处理成`mdotAlphal`的方式确实很蠢，如果代码变动方便的话应该考虑处理成`Su`，`Sp`的格式。这里对于压力方程中不需做太多更改，仅需改变相方程，然后将`Alhpal`结尾的方法改成使用源项。
+
+
+

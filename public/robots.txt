@@ -7,17 +7,19 @@ Disallow: /tags/code/
 
 Disallow: /tags/ec/
 
-Disallow: /post/irmif/
+Disallow: /post/irmf1/
 
 Disallow: /
 
-Disallow: /categories/openfoam/
-
 Disallow: /tags/openfoam/
+
+Disallow: /categories/openfoam/
 
 Disallow: /post/
 
 Disallow: /tags/
+
+Disallow: /post/irmif/
 
 Disallow: /post/loveletter/
 

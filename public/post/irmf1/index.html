@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+<title>IRMIF中的多流体模型（一） - MrZZQi's Blog</title>
+<meta content="webkit" name="renderer"/>
+<meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport"/>
+<meta content="no-transform" http-equiv="Cache-Control"/>
+<meta content="no-siteapp" http-equiv="Cache-Control"/>
+<meta content="#f8f5ec" name="theme-color"/>
+<meta content="#f8f5ec" name="msapplication-navbutton-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="#f8f5ec" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="ZZQ" name="author"/><meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" name="description"/><meta content="E&amp;C, OpenFOAM" name="keywords"/>
+<meta content="Hugo 0.64.1 with theme even" name="generator"/>
+<link href="http://localhost:1313/post/irmf1/" rel="canonical"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet"/>
+<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" rel="stylesheet"/>
+<meta content="IRMIF中的多流体模型（一）" property="og:title"/>
+<meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" property="og:description"/>
+<meta content="article" property="og:type"/>
+<meta content="http://localhost:1313/post/irmf1/" property="og:url"/>
+<meta content="2020-03-04T15:34:30+08:00" property="article:published_time"/>
+<meta content="2020-03-04T15:34:30+08:00" property="article:modified_time"/>
+<meta content="IRMIF中的多流体模型（一）" itemprop="name"/>
+<meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" itemprop="description"/>
+<meta content="2020-03-04T15:34:30+08:00" itemprop="datePublished"/>
+<meta content="2020-03-04T15:34:30+08:00" itemprop="dateModified"/>
+<meta content="5440" itemprop="wordCount"/>
+<meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
+<meta content="IRMIF中的多流体模型（一）" name="twitter:title"/>
+<meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" name="twitter:description"/>
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+</head>
+<body>
+<div class="mobile-navbar" id="mobile-navbar">
+<div class="mobile-header-logo">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<div class="mobile-navbar-icon">
+<span></span>
+<span></span>
+<span></span>
+</div>
+</div>
+<nav class="mobile-menu slideout-menu" id="mobile-menu">
+<ul class="mobile-menu-list">
+<a href="/">
+<li class="mobile-menu-item">Home</li>
+</a><a href="/post/">
+<li class="mobile-menu-item">Archives</li>
+</a><a href="/tags/">
+<li class="mobile-menu-item">Tags</li>
+</a><a href="/categories/">
+<li class="mobile-menu-item">Categories</li>
+</a>
+</ul>
+</nav>
+<div class="container" id="mobile-panel">
+<header class="header" id="header">
+<div class="logo-wrapper">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<nav class="site-navbar">
+<ul class="menu" id="menu">
+<li class="menu-item">
+<a class="menu-item-link" href="/">Home</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/post/">Archives</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/tags/">Tags</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/categories/">Categories</a>
+</li>
+</ul>
+</nav>
+</header>
+<main class="main" id="main">
+<div class="content-wrapper">
+<div class="content" id="content">
+<article class="post">
+<header class="post-header">
+<h1 class="post-title">IRMIF中的多流体模型（一）</h1>
+<div class="post-meta">
+<span class="post-time"> Wednesday, March 4, 2020 </span>
+<div class="post-category">
+<a href="/categories/openfoam/"> OpenFOAM </a>
+</div>
+<span class="more-meta"> 5440 words </span>
+<span class="more-meta"> 11 mins read </span>
+</div>
+</header>
+<div class="post-toc" id="post-toc">
+<h2 class="post-toc-title">Contents</h2>
+<div class="post-toc-content">
+<nav id="TableOfContents">
+<ul>
+<li><a href="#求解器脉络">求解器脉络</a>
+<ul>
+<li><a href="#fluidsolve">fluid.solve()</a></li>
+<li><a href="#ueqnh">UEqn.H</a></li>
+<li><a href="#yeqnh">YEqn.H</a></li>
+<li><a href="#teqnh">TEqn.H</a></li>
+<li><a href="#peqnh">PEqn.H</a></li>
+</ul>
+</li>
+<li><a href="#多流体模型">多流体模型</a>
+<ul>
+<li><a href="#phasesystem的构造">phaseSystem的构造</a></li>
+<li><a href="#multiphasesystem的构建">multiphaseSystem的构建</a></li>
+<li><a href="#masstransferphasemodel">MassTransferPhaseModel</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+<div class="post-content">
+<p><code>interCondensatingEvaporatingFoam</code>在计算低温流体时温度场发散，在界面区域温度出现小范围波动后，迅速在气液界面区域出现极高温和极低温，高至几百K，低至负几千K（最早时温度场在迭代几步之后出现发散，之后偶然有一次可以计算，最近再试依旧发散，所以最终归结为其对于低温流体温度、物性的计算不稳定）。初步归纳发散的原因有以下几个可能，</p>
+<ol>
+<li>温度控制方程太简陋，仅仅是Laplace方程；</li>
+<li>质量方程中源项处理不准确，未考虑源项为负时显式处理。</li>
+</ol>
+<p>那么最终还是要回到使用<code>icoReactingMultiphaseInterFoam</code>上，这个求解器有以下几个特点：</p>
+<ol>
+<li>对热物性方面处理更佳缜密，沿用了<code>OpenFOAM</code>的热物性库；</li>
+<li>对多相（大于等于2）的处理更精确，包括相内多组分的求解；</li>
+<li>使用液氧计算简单沸腾现象通过；</li>
+<li>模型结构更复杂，内容更多。</li>
+</ol>
+<p>之前已经分析过该求解器中的相变模型，但要更准确的使用，还需要再探讨以下这些内容：</p>
+<ol>
+<li>求解器计算过程</li>
+<li>多流体模型</li>
+<li>相模型</li>
+<li>表面张力模型</li>
+</ol>
+<p>对于辐射模型和化学反应过程这里不关心。这篇争取解释好前两点。</p>
+<h2 id="求解器脉络">求解器脉络</h2>
+<p>先按初始化各个物理场，<code>createFields.H</code>中创建的场包括：压力、速度、温度，<code>rhoCp</code>，<code>K</code>，密度，<code>rhoPhi</code>。创建的指针包括：多流体模型，湍流模型，辐射模型的指针。</p>
+<p>关于时间步长的确定有两个准则，一是常规采用的有限体积法下计算的库朗数<a href="https://marinecfd.xyz/post/courant-number-in-unstructured-grids/">[1]</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">CoNum</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">gMax</span><span class="p">(</span><span class="n">sumPhi</span><span class="o">/</span><span class="n">mesh</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">field</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="o">*</span><span class="n">runTime</span><span class="p">.</span><span class="n">deltaTValue</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">meanCoNum</span> <span class="o">=</span>
+        <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">gSum</span><span class="p">(</span><span class="n">sumPhi</span><span class="p">)</span><span class="o">/</span><span class="n">gSum</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">field</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span><span class="o">*</span><span class="n">runTime</span><span class="p">.</span><span class="n">deltaTValue</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>还引用了<code>alphaCourantNo.H</code>计算相界面处的库朗数，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">scalarField</span> <span class="nf">sumPhi</span>
+    <span class="p">(</span>
+        <span class="n">fluid</span><span class="p">.</span><span class="n">nearInterface</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">internalField</span><span class="p">(</span><span class="p">)</span>
+       <span class="o">*</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">surfaceSum</span><span class="p">(</span><span class="n">mag</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">internalField</span><span class="p">(</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="n">alphaCoNum</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">gMax</span><span class="p">(</span><span class="n">sumPhi</span><span class="o">/</span><span class="n">mesh</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">field</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="o">*</span><span class="n">runTime</span><span class="p">.</span><span class="n">deltaTValue</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">meanAlphaCoNum</span> <span class="o">=</span>
+        <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">gSum</span><span class="p">(</span><span class="n">sumPhi</span><span class="p">)</span><span class="o">/</span><span class="n">gSum</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">field</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span><span class="o">*</span><span class="n">runTime</span><span class="p">.</span><span class="n">deltaTValue</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">ddtAlphaNum</span> <span class="o">=</span> <span class="n">fluid</span><span class="p">.</span><span class="n">ddtAlphaMax</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="p">)</span><span class="o">*</span><span class="n">runTime</span><span class="p">.</span><span class="n">deltaTValue</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">DiNum</span> <span class="o">=</span> <span class="n">fluid</span><span class="p">.</span><span class="n">maxDiffNo</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>nearInterface()</code>方法返回的场在界面区域为1，其他地方为0，这里起到mask的作用。同时获得多相体系中的最大相变量<code>ddtAlphaNum</code>和扩散系数<code>maxDiffNo</code>，体系的方法分别调用体系内所存流体模型的方法，并输出最大值。</p>
+<p>做完准备工作后，求解器分别求解<code>UEqn</code>,<code>PEqn.H</code>,<code>TEqn.H</code>和<code>YEqn.H</code>。前三个比较常见，这里主要分析耦合相变模型后方程的变化，最后的组分方程在求解相内组分迁移时引用。下面按照方程求解顺序介绍。</p>
+<h3 id="fluidsolve"><code>fluid.solve()</code></h3>
+<p>在求解控制方程前先调用了多流体系统的<code>fluid.solve()</code>方法， 该方法定义于<code>multiphaseSystem</code>类中。该方法对于每一相采用类似<code>interfoam</code>中求解两相分布的方法，定义相迁移方程，并使用MULES修正。</p>
+<p>同时，在求解过程中，调用<code>calculateSuSp()</code>方法，更新相变源项。源项包括<code>Su</code>，<code>Sp</code>项，其中<code>Su</code>显式定义在相方程中，<code>Sp</code>是带有$\alpha$ 的源项，通过调用<code>fvm::Sp</code>讲源项更新在系数矩阵对角线上求解。在本例中程序会判断源项的正负，若<code>Sp</code>为正值，则全部更新到<code>Su</code>中，若为负，则隐式求解，这样可以保证系数矩阵的对角占优，增强数值稳定性，更一般的方法还有调用<code>fvm::SuSP</code>，可以自动处理源项<a href="https://marinecfd.xyz/post/openfoam-source-term-treatment/">[2]</a>。</p>
+<h3 id="ueqnh">UEqn.H</h3>
+<p>求解步骤与一般的UEqn并无明显区别，关于表面张力模型后面再看。在建立UEqn并松弛之后，多了一项跟多孔介质有关的描述<code>fluid.addInterfacePorosity(UEqn);</code>。该方法在UEqn矩阵对角线上增加多孔介质模型的<code>S()</code>方法，因为不懂，所以这里不展开描述。</p>
+<h3 id="yeqnh">YEqn.H</h3>
+<p>组分方程是求解器中重要的内容。方程描述的是单相内的组分迁移规律，各组分之间是互融的，组分迁移是自由扩散迁移。</p>
+<p>进到文件里面先套了一层循环，冒号指表示遍历可iterate的变量。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">for</span> <span class="p">(</span><span class="n">phaseModel</span><span class="o">&amp;</span> <span class="nl">phase</span> <span class="p">:</span> <span class="n">fluid</span><span class="p">.</span><span class="n">phases</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="o">:</span>
+
+<span class="k">const</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">UPtrList</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">phaseModel</span><span class="o">&gt;</span><span class="o">&amp;</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">multiphaseSystem</span><span class="o">:</span><span class="o">:</span><span class="n">phases</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+<span class="k">return</span> <span class="n">phases_</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中，<code>phases_</code>是指针列表，指向多流体中的各个流体模型。进入循环后，在单相内构建组分源项，并调用<code>fluid.massSpeciesTransfer()</code>方法计算相间的质量变化。最后调用相模型的<code>phase.solveYi()</code>方法求解组分迁移。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">forAll</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="c1">// Calculate mass exchange for species consistent with
+</span><span class="c1"></span>  <span class="c1">// alpha's source terms.
+</span><span class="c1"></span>  <span class="n">fluid</span><span class="p">.</span><span class="n">massSpeciesTransfer</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">Sus</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="p">,</span> <span class="n">Sps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="p">,</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="n">phase</span><span class="p">.</span><span class="n">solveYi</span><span class="p">(</span><span class="n">Sus</span><span class="p">,</span> <span class="n">Sps</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>massSpeciesTransfer()</code>在<code>MassTransferPhaseSystem</code>中定义，代码及注释如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">BasePhaseSystem</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">MassTransferPhaseSystem</span><span class="o">&lt;</span><span class="n">BasePhaseSystem</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">massSpeciesTransfer</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">phaseModel</span><span class="o">&amp;</span> <span class="n">phase</span><span class="p">,</span>
+    <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">Su</span><span class="p">,</span>
+    <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Internal</span><span class="o">&amp;</span> <span class="n">Sp</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">word</span> <span class="n">speciesName</span>
+<span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// Fill the volumetric mass transfer for species
+</span><span class="c1"></span>    <span class="n">forAllConstIters</span><span class="p">(</span><span class="n">massTransferModels_</span><span class="p">,</span> <span class="n">iter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">iter</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">transferSpecie</span><span class="p">(</span><span class="p">)</span> <span class="o">=</span><span class="o">=</span> <span class="n">speciesName</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">// Explicit source，将相的变化率读取至组分，并显式求解。
+</span><span class="c1"></span>            <span class="n">Su</span> <span class="o">+</span><span class="o">=</span>
+                  <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">Su</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">phase</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">]</span>
+                <span class="o">+</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">Sp</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">phase</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="o">*</span><span class="n">phase</span><span class="p">.</span><span class="n">oldTime</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>solveYi()</code>方法在各自的相模型中定义，对于纯质，如<code>purePhaseModel</code>，这个函数什么都不做，对于混合物，如<code>multiComponentPhaseModel</code>，这个函数在对组分场进行一些处理后，单独求解各个组分的方程，并做了MULES修正。</p>
+<h3 id="teqnh">TEqn.H</h3>
+<p>温度方程的形式大体是焓方程，但是和<code>OpenFOAM</code>官方给出的形式稍有差别，数学表达式可参考<a href="https://www.cfd-online.com/Forums/openfoam-solving/150535-evapvofhardt-discussion-come-join.html">这篇帖子</a>，以及<a href="https://linkinghub.elsevier.com/retrieve/pii/S0021999108001228">Hardt</a>的文章。温度方程中包含<code>fluid.heatTransfer(T)</code>，表证的是因传质引入的源项，该源项对每一对相变物理场更新源项为
+$$
+S_m = [h_{lg}-(c_{p,l}-c_{p,g})T_{std}]\dot{m}
+$$</p>
+<p>其中，$T_{std}$是<code>constant::standard::Tstd</code>，表示单位温度。考虑了这部分相变质量变化时潜热和显热的部分。</p>
+<p>在求解温度方程后，重新调用了<code>fluid.correct()</code>方法调用每一个相的修正函数。</p>
+<h3 id="peqnh">PEqn.H</h3>
+<p>与<code>iCEF</code>中类似，在每一对发生相变的相方程右侧增加了传质引入的源项，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">p_rghEqn</span> <span class="o">+</span><span class="o">=</span>
+<span class="n">dmdtNet</span><span class="o">*</span>
+<span class="p">(</span>
+<span class="o">-</span> <span class="n">fluid</span><span class="p">.</span><span class="n">coeffs</span><span class="p">(</span><span class="n">phase1</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+<span class="o">+</span> <span class="n">fluid</span><span class="p">.</span><span class="n">coeffs</span><span class="p">(</span><span class="n">phase2</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+<span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>coeffs</code>返回的是密度的倒数，对应的方程为，
+$$
+\sum_{f\in\partial \Omega_i}\left ( \frac{1}{A_P}\right )\left ( \nabla^\perp_f p^{m+1}_d\right ) |S_f| - \sum_{f\in\partial \Omega_i} \phi^r_f = \frac{\dot{m}}{\rho_l}- \frac{\dot{m}}{\rho_v}
+$$
+在PIMPLE循环结束后，更新体系内的密度，然后将计算结果输出。</p>
+<h2 id="多流体模型">多流体模型</h2>
+<p>求解器中多流体模型主要由<code>phaseModel</code>，<code>phaseSystem</code>，<code>multiphaseSystem</code>，<code>MassTransferPhaseSystem</code>构成，其逻辑继承关系基本也是从前到后依次扩大。<code>phaseModel</code>是相模型，其本身继承自<code>volScalarField</code>，是表示相分数的场。同时，类中定义了大量与相绑定的物性参数计算方法，如密度、粘度等。具体有关相模型的内容后面再介绍，本节主要介绍求解器的多流体模型是如何搭建的。</p>
+<p>在初始化物理场时，创建的是指向<code>multiphaseSystem</code>的指针，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Info</span><span class="o">&lt;</span><span class="o">&lt;</span> <span class="sa"></span><span class="s">"</span><span class="s">Creating multiphaseSystem</span><span class="se">\n</span><span class="s">"</span> <span class="o">&lt;</span><span class="o">&lt;</span> <span class="n">endl</span><span class="p">;</span>
+<span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">multiphaseSystem</span><span class="o">&gt;</span> <span class="n">fluidPtr</span> <span class="o">=</span> <span class="n">multiphaseSystem</span><span class="o">:</span><span class="o">:</span><span class="n">New</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span><span class="p">;</span>
+<span class="n">multiphaseSystem</span><span class="o">&amp;</span> <span class="n">fluid</span> <span class="o">=</span> <span class="n">fluidPtr</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>该类继承自<code>phaseSystem</code>，这两个类的区别如下，</p>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">multiPhaseSystem</th>
+<th align="center">phaseSystem</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">父类</td>
+<td align="center">phaseSystem</td>
+<td align="center">basicThermo, <!-- raw HTML omitted -->compressibleTransportModel</td>
+</tr>
+<tr>
+<td align="center">包含的表</td>
+<td align="center">SuSpTable<!-- raw HTML omitted -->scalarTable<!-- raw HTML omitted -->compressionFluxTable</td>
+<td align="center">phasePairTable<!-- raw HTML omitted -->phaseModelTable<!-- raw HTML omitted -->sufaceTensionTable<!-- raw HTML omitted -->interfacePorousTable</td>
+</tr>
+</tbody>
+</table>
+<p>从功能上讲，<code>phaseSystem</code>基本已经构建完成了多流体系统的框架，包括了体系内相对，相模型和子模型表。而<code>multiphaseSystem</code>虽然在名字上多了<code>multi</code>，但是增加的内容大多是与传热、求解相方程有关的，包括前述solve()`方法。</p>
+<p>在<code>createField.H</code>中，使用的是<code>New</code>(selector)完成创建指针，那么得到的是RTS机制获得的指针。以<code>evaporatingMultiComponent</code>案例为例，在<code>constant/phaseProperties</code>中<code>type</code>关键字为<code>massTransferMultiphaseSystem</code>，这说明后者是前者的派生类。该类中包含了相变模型(<code>interfaceCompositionModel</code>)及具体计算传热传质量的表达式。</p>
+<p>当构造一个<code>MassTransferPhaseSystem</code>类时，构造的顺序是<code>phaseSystem</code>-&gt;<code>multiphaseSystem</code>-&gt;<code>MassTransferPhaseSystem</code>。下面按照构造顺序依次分析多流体系统的构建过程。</p>
+<h3 id="phasesystem的构造">phaseSystem的构造</h3>
+<p>构造时先调用其父类<code>basicThermo</code>的构造函数，保存<code>mesh</code>的引用，并在<code>constant/phaseProperties</code>中查找<code>phases</code>字段并存储至<code>phaseNames</code>列表中，同时生成压力、温度场、相分数场。</p>
+<p>完成<code>basicThermo</code>构建后，调用<code>generatePhaseModels</code>初始化<code>phaseModels_</code>这张hash表。这个方法需要的参数是<code>wordList&amp; phaseNames</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">phaseModelTable</span> <span class="n">phaseModels</span><span class="p">;</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">word</span><span class="o">&amp;</span> <span class="nl">phaseName</span> <span class="p">:</span> <span class="n">phaseNames</span><span class="p">)</span> <span class="c1">//对读到的每一相都创建模型
+</span><span class="c1"></span>    <span class="p">{</span>
+        <span class="n">phaseModels</span><span class="p">.</span><span class="n">insert</span>
+        <span class="p">(</span>
+            <span class="n">phaseName</span><span class="p">,</span>
+            <span class="n">phaseModel</span><span class="o">:</span><span class="o">:</span><span class="n">New</span> <span class="c1">//phaseModel中New时需要声明所属的phaseSystem
+</span><span class="c1"></span>            <span class="p">(</span>
+                <span class="o">*</span><span class="k">this</span><span class="p">,</span>
+                <span class="n">phaseName</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">phaseModels</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>phaseModel</code>的创建在后面讨论。这样在<code>phaseModels_</code>中初始化了一张<code>key</code>为相名称，<code>val</code>为指针的表。</p>
+<p>之后，寻找<code>phaseProperties</code>中是否有<code>surfaceTension</code>或者<code>interfacePorous</code>子字典，如果有的话，调用<code>generatePairsAndSubModels</code>创建相对和子模型。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="k">if</span> <span class="p">(</span><span class="n">found</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">surfaceTension</span><span class="s">"</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">generatePairsAndSubModels</span>
+        <span class="p">(</span>
+            <span class="sa"></span><span class="s">"</span><span class="s">surfaceTension</span><span class="s">"</span><span class="p">,</span>
+            <span class="n">mesh_</span><span class="p">,</span>
+            <span class="n">surfaceTensionModels_</span>
+        <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中，表面张力模型表的类型为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">        <span class="k">typedef</span>
+            <span class="n">HashTable</span>
+            <span class="o">&lt;</span>
+                <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">surfaceTensionModel</span><span class="o">&gt;</span><span class="p">,</span>
+                <span class="n">phasePairKey</span><span class="p">,</span>
+                <span class="n">phasePairKey</span><span class="o">:</span><span class="o">:</span><span class="n">hash</span>
+            <span class="o">&gt;</span>
+            <span class="n">surfaceTensionModelTable</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>对应的<code>generatePairsAndSubModels</code>方法定义为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">dictTable</span> <span class="nf">modelDicts</span><span class="p">(</span><span class="n">lookup</span><span class="p">(</span><span class="n">modelName</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">generatePairs</span><span class="p">(</span><span class="n">modelDicts</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">createSubModels</span><span class="p">(</span><span class="n">modelDicts</span><span class="p">,</span> <span class="n">models</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>首先在文件中搜索<code>modlename</code>，比如，在这里是<code>surfaceTension</code>，例程中为，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">surfaceTension</span>
+<span class="p">(</span>
+    <span class="p">(</span><span class="n">gas</span> <span class="n">and</span> <span class="n">liquid</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">type</span>            <span class="n">constant</span><span class="p">;</span>
+        <span class="n">sigma</span>           <span class="mf">0.07</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>然后将该段feed给<code>HashTable&lt;dictionary, phasePairKey, phasePairKey::hash&gt; modelDicts</code>。该表是由<code>phasePairKey</code>和<code>dictionary</code>组成的Hash表。由例程可见，<code>gas and liquid</code>用来初始化一个<code>phasePairKey</code>，而后面的内容作为一个字典存至表中。</p>
+<hr/>
+<p>这里额外分析一下<code>phasePairKey</code>，<code>phasePair</code>，和<code>orderedPhasePair</code>。继承关系为从前到后。</p>
+<p><code>phasePairKey</code>包含了一对字符，和表征字符间是否有顺序的布尔值。重定义了IO和比较逻辑，例如，当读入的是<code>xx and xx</code>时，<code>bool = false</code>；当读入<code>xx to xx</code>时，<code>bool = ture</code>。同时，还定义了一个<code>hash()</code>，用以生成存储的字符对对应的hash值。<code>phasePair</code>继承自<code>phasePairKey</code>，增加了两个<code>phaseModel</code>的引用和接口，但是默认将<code>ordered</code>设置为<code>false</code>。自然地，<code>orderedPhasePair</code>描述的是两相间顺序有意义的相对。</p>
+<hr/>
+<p>之后调用<code>generatePairs</code>创建相对，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">forAllConstIters</span><span class="p">(</span><span class="n">modelDicts</span><span class="p">,</span> <span class="n">iter</span><span class="p">)</span><span class="c1">//按Key生成Pair，并储存
+</span><span class="c1"></span>    <span class="p">{</span>
+        <span class="k">const</span> <span class="n">phasePairKey</span><span class="o">&amp;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">iter</span><span class="p">.</span><span class="n">key</span><span class="p">(</span><span class="p">)</span><span class="p">;</span><span class="c1">//获得当前循环的Key
+</span><span class="c1"></span>
+        <span class="c1">// pair already exists
+</span><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">phasePairs_</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">// do nothing ...
+</span><span class="c1"></span>        <span class="p">}</span>
+        <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">key</span><span class="p">.</span><span class="n">ordered</span><span class="p">(</span><span class="p">)</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">// New ordered pair
+</span><span class="c1"></span>            <span class="n">phasePairs_</span><span class="p">.</span><span class="n">insert</span> <span class="c1">//该表是phasePairKey和phasePair组成的
+</span><span class="c1"></span>            <span class="p">(</span>
+                <span class="n">key</span><span class="p">,</span>
+                <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">phasePair</span><span class="o">&gt;</span>
+                <span class="p">(</span>
+                    <span class="k">new</span> <span class="n">orderedPhasePair</span>
+                    <span class="p">(</span>
+                        <span class="n">phaseModels_</span><span class="p">[</span><span class="n">key</span><span class="p">.</span><span class="n">first</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="p">,</span>
+                        <span class="n">phaseModels_</span><span class="p">[</span><span class="n">key</span><span class="p">.</span><span class="n">second</span><span class="p">(</span><span class="p">)</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="c1">// New unordered pair
+</span><span class="c1"></span>            <span class="n">phasePairs_</span><span class="p">.</span><span class="n">insert</span>
+            <span class="p">(</span>
+                <span class="n">key</span><span class="p">,</span>
+                <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">phasePair</span><span class="o">&gt;</span>
+                <span class="p">(</span>
+                    <span class="k">new</span> <span class="n">phasePair</span>
+                    <span class="p">(</span>
+                        <span class="n">phaseModels_</span><span class="p">[</span><span class="n">key</span><span class="p">.</span><span class="n">first</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="p">,</span>
+                        <span class="n">phaseModels_</span><span class="p">[</span><span class="n">key</span><span class="p">.</span><span class="n">second</span><span class="p">(</span><span class="p">)</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>生成<code>phasePair</code>后，填补表征子模型的表（比如哪个相对应采用哪个表面张力模型），调用的是<code>createSubModels</code>，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">modelType</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">phaseSystem</span><span class="o">:</span><span class="o">:</span><span class="n">createSubModels</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">dictTable</span><span class="o">&amp;</span> <span class="n">modelDicts</span><span class="p">,</span>
+    <span class="n">HashTable</span>
+    <span class="o">&lt;</span>
+        <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">modelType</span><span class="o">&gt;</span><span class="p">,</span> <span class="c1">//表面张力: interfaceCompositionModel
+</span><span class="c1"></span>        <span class="n">phasePairKey</span><span class="p">,</span>
+        <span class="n">phasePairKey</span><span class="o">:</span><span class="o">:</span><span class="n">hash</span>
+    <span class="o">&gt;</span><span class="o">&amp;</span> <span class="n">models</span>
+<span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">forAllConstIters</span><span class="p">(</span><span class="n">modelDicts</span><span class="p">,</span> <span class="n">iter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">const</span> <span class="n">phasePairKey</span><span class="o">&amp;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">iter</span><span class="p">.</span><span class="n">key</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+        <span class="n">models</span><span class="p">.</span><span class="n">insert</span>
+        <span class="p">(</span>
+            <span class="n">key</span><span class="p">,</span>
+            <span class="n">modelType</span><span class="o">:</span><span class="o">:</span><span class="n">New</span>
+            <span class="p">(</span>
+                <span class="n">iter</span><span class="p">.</span><span class="n">val</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>  <span class="c1">//按照读进来的字典文件创建表面张力模型
+</span><span class="c1"></span>                <span class="n">phasePairs_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="c1">//key对应的相对
+</span><span class="c1"></span>            <span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>关于表面张力模型的创建后面再详细介绍。</p>
+<p>子模型创建完成后，调用<code>generatePairsTable</code>完成体系内相对的构建，以下方法保证创建出的<code>totalPhasePair</code>表中元素互异。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">forAllConstIters</span><span class="p">(</span><span class="n">phaseModels_</span><span class="p">,</span> <span class="n">phaseIter1</span><span class="p">)</span><span class="c1">//从相模型字典中读取相1
+</span><span class="c1"></span>    <span class="p">{</span>
+        <span class="n">forAllConstIters</span><span class="p">(</span><span class="n">phaseModels_</span><span class="p">,</span> <span class="n">phaseIter2</span><span class="p">)</span><span class="c1">//读取相2
+</span><span class="c1"></span>        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">phaseIter1</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">name</span><span class="p">(</span><span class="p">)</span> <span class="o">!</span><span class="o">=</span> <span class="n">phaseIter2</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="c1">//判断不同相
+</span><span class="c1"></span>            <span class="p">{</span>
+                <span class="n">phasePairKey</span> <span class="n">key</span> <span class="c1">//构建有1至2的有序Key
+</span><span class="c1"></span>                <span class="p">(</span>
+                    <span class="n">phaseIter1</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="n">phaseIter2</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="nb">true</span>
+                <span class="p">)</span><span class="p">;</span>
+
+                <span class="n">phasePairKey</span> <span class="n">keyInverse</span> <span class="c1">//构建反向Key
+</span><span class="c1"></span>                <span class="p">(</span>
+                    <span class="n">phaseIter2</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="n">phaseIter1</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="nb">true</span>
+                <span class="p">)</span><span class="p">;</span>
+
+                <span class="k">if</span>
+                <span class="p">(</span>
+                    <span class="o">!</span><span class="n">totalPhasePairs_</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                 <span class="o">&amp;</span><span class="o">&amp;</span> <span class="o">!</span><span class="n">totalPhasePairs_</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="n">keyInverse</span><span class="p">)</span>
+                <span class="p">)</span> <span class="c1">//若正向反向key均为包含在total中，构建phasepair
+</span><span class="c1"></span>                <span class="p">{</span>
+                    <span class="n">totalPhasePairs_</span><span class="p">.</span><span class="n">set</span>
+                    <span class="p">(</span>
+                        <span class="n">key</span><span class="p">,</span>
+                        <span class="n">autoPtr</span><span class="o">&lt;</span><span class="n">phasePair</span><span class="o">&gt;</span>
+                        <span class="p">(</span>
+                            <span class="k">new</span> <span class="n">phasePair</span>
+                            <span class="p">(</span>
+                                <span class="n">phaseModels_</span><span class="p">[</span><span class="n">key</span><span class="p">.</span><span class="n">first</span><span class="p">(</span><span class="p">)</span><span class="p">]</span><span class="p">,</span>
+                                <span class="n">phaseModels_</span><span class="p">[</span><span class="n">key</span><span class="p">.</span><span class="n">second</span><span class="p">(</span><span class="p">)</span><span class="p">]</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span><span class="p">;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>需要注意的是，<code>phasePairs_</code>是在<code>generatePairs</code>方法中使用，是靠读取字典文件中的关键字一一创建。而<code>totalPhasePairs</code>则是按照排列组合把体系包含的所有相对都创建一遍。</p>
+<p>至此，就完成了<code>phaseSystem</code>的构建。该类可提供多流体系统中物性的接口，比如密度，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">scalarField</span><span class="o">&gt;</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">phaseSystem</span><span class="o">:</span><span class="o">:</span><span class="n">rho</span><span class="p">(</span><span class="k">const</span> <span class="n">label</span> <span class="n">patchI</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">auto</span> <span class="n">iter</span> <span class="o">=</span> <span class="n">phaseModels_</span><span class="p">.</span><span class="n">cbegin</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span> <span class="n">tmpRho</span>
+    <span class="p">(</span>
+        <span class="n">iter</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">patchI</span><span class="p">]</span>
+      <span class="o">*</span> <span class="n">iter</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">patchI</span><span class="p">]</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="o">+</span><span class="o">+</span><span class="n">iter</span><span class="p">;</span> <span class="n">iter</span> <span class="o">!</span><span class="o">=</span> <span class="n">phaseModels_</span><span class="p">.</span><span class="n">cend</span><span class="p">(</span><span class="p">)</span><span class="p">;</span> <span class="o">+</span><span class="o">+</span><span class="n">iter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">tmpRho</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span> <span class="o">+</span><span class="o">=</span>   <span class="c1">//加权求和体系内各model的密度
+</span><span class="c1"></span>        <span class="p">(</span>
+            <span class="n">iter</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">patchI</span><span class="p">]</span>
+          <span class="o">*</span> <span class="n">iter</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">patchI</span><span class="p">]</span>
+        <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">tmpRho</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="multiphasesystem的构建">multiphaseSystem的构建</h3>
+<p><code>multiphaseSystem</code>在调用<code>phaseSystem</code>构造函数的基础上，读取了一些MULES的控制参数，同时初始化了<code>Su</code>，<code>Sp</code>两张源项表。</p>
+<p>该类额外提供的功能包括</p>
+<ul>
+<li>求解体系内相迁移方程</li>
+<li>计算相方程中源项的方法</li>
+<li>以<code>phase[i]</code>方法获取<code>phaseModel</code>或者体积分数场</li>
+</ul>
+<h3 id="masstransferphasemodel">MassTransferPhaseModel</h3>
+<p>该类是继承自<code>multiphaseSystem</code>的RTS类，通过<code>multiphaseSystems.C</code>加入RTS表</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="k">typedef</span>
+        <span class="n">MassTransferPhaseSystem</span><span class="o">&lt;</span><span class="n">multiphaseSystem</span><span class="o">&gt;</span> <span class="n">massTransferMultiphaseSystem</span><span class="p">;</span>
+
+    <span class="n">addNamedToRunTimeSelectionTable</span>
+    <span class="p">(</span>
+        <span class="n">multiphaseSystem</span><span class="p">,</span>
+        <span class="n">massTransferMultiphaseSystem</span><span class="p">,</span>
+        <span class="n">dictionary</span><span class="p">,</span>
+        <span class="n">massTransferMultiphaseSystem</span>
+    <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在构造时，先调用父类的构造函数，同时，利用前面提到的创建子模型的方法<code>generatePairsAndSubModels</code>创建传质模型表，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">generatePairsAndSubModels</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">massTransferModel</span><span class="s">"</span><span class="p">,</span> <span class="n">massTransferModels_</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>以例程为例，字典如下所示</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">massTransferModel</span>
+<span class="p">(</span>
+    <span class="p">(</span><span class="n">liquid</span> <span class="n">to</span> <span class="n">gas</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">type</span>            <span class="n">Lee</span><span class="p">;</span>
+        <span class="n">species</span>         <span class="n">vapour</span><span class="p">.</span><span class="n">gas</span><span class="p">;</span>
+        <span class="n">C</span>               <span class="mi">8</span><span class="p">;</span>
+        <span class="n">alphaMin</span>        <span class="mf">0.0</span><span class="p">;</span>
+        <span class="n">alphaMax</span>        <span class="mf">0.2</span><span class="p">;</span>
+        <span class="n">Tactivate</span>       <span class="mf">90.147</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>构造完成后，声明<code>dmdt</code>（传质速率）场，并且声明需要保存。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">forAllConstIters</span><span class="p">(</span><span class="n">massTransferModels_</span><span class="p">,</span> <span class="n">iterModel</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">dmdt_</span><span class="p">.</span><span class="n">found</span><span class="p">(</span><span class="n">iterModel</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">dmdt_</span><span class="p">.</span><span class="n">set</span>
+            <span class="p">(</span>
+                <span class="n">iterModel</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                <span class="k">new</span> <span class="n">volScalarField</span>
+                <span class="p">(</span>
+                    <span class="n">IOobject</span>
+                    <span class="p">(</span>
+                        <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">groupName</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">dmdt</span><span class="s">"</span><span class="p">,</span><span class="n">iterModel</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">pair</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">name</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">,</span>
+                        <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                        <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                        <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">NO_READ</span><span class="p">,</span>
+                        <span class="n">IOobject</span><span class="o">:</span><span class="o">:</span><span class="n">AUTO_WRITE</span>
+                    <span class="p">)</span><span class="p">,</span>
+                    <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="n">dimensionedScalar</span><span class="p">(</span><span class="n">dimDensity</span><span class="o">/</span><span class="n">dimTime</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>该类中包含了全部的与计算传热相关的函数，比如计算潜热的<code>calculateL</code>，计算传热并切更新源项的<code>heatTransfer</code>，以及计算组分间传质的<code>massSpeciesTransfer</code>。</p>
+<p>至此，多流体模型的框架久搭建完成了。</p>
+</div>
+<div class="post-copyright">
+<p class="copyright-item">
+<span class="item-title">Author</span>
+<span class="item-content">ZZQ</span>
+</p>
+<p class="copyright-item">
+<span class="item-title">LastMod</span>
+<span class="item-content">
+        Wednesday, March 4, 2020
+        
+    </span>
+</p>
+</div>
+<footer class="post-footer">
+<div class="post-tags">
+<a href="/tags/ec/">E&amp;C</a>
+<a href="/tags/openfoam/">OpenFOAM</a>
+<a href="/tags/code/">code</a>
+</div>
+<nav class="post-nav">
+<a class="next" href="/post/irmif/">
+<span class="next-text nav-default">IRMIF中蒸发冷凝模型实现方式</span>
+<span class="next-text nav-mobile">Next</span>
+<i class="iconfont icon-right"></i>
+</a>
+</nav>
+</footer>
+</article>
+</div>
+</div>
+</main>
+<footer class="footer" id="footer">
+<div class="social-links">
+<a class="iconfont icon-email" href="mailto:zuozqi@sjtu.edu.cn" title="email"></a>
+<a class="iconfont icon-rss" href="http://localhost:1313/index.xml" title="rss" type="application/rss+xml"></a>
+</div>
+<div class="copyright">
+<span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+</span>
+<span class="division">|</span>
+<span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+</span>
+<span class="copyright-year">
+    © 
+    2020
+    <span class="heart">
+<i class="iconfont icon-heart"></i>
+</span>
+<span class="author">ZZQ</span>
+</span>
+</div>
+</footer>
+<div class="back-to-top" id="back-to-top">
+<i class="iconfont icon-up"></i>
+</div>
+</div>
+<script crossorigin="anonymous" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js"></script>
+<script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script src="/dist/even.26188efa.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+    window.MathJax = {
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+      TeX: {equationNumbers: {autoNumber: "AMS"}},
+      showProcessingMessages: false,
+      messageStyle: 'none'
+    };
+  </script>
+<script async="" crossorigin="anonymous" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

@@ -32,7 +32,7 @@
 <meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" itemprop="description"/>
 <meta content="2020-02-27T13:03:32+08:00" itemprop="datePublished"/>
 <meta content="2020-02-27T13:03:32+08:00" itemprop="dateModified"/>
-<meta content="4004" itemprop="wordCount"/>
+<meta content="4078" itemprop="wordCount"/>
 <meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
 <meta content="IRMIF中蒸发冷凝模型实现方式" name="twitter:title"/>
 <meta content="icoReactingMultiphaseInterFoam中蒸发冷凝模型学习记录" name="twitter:description"/>
@@ -98,8 +98,8 @@
 <div class="post-category">
 <a href="/categories/openfoam/"> OpenFOAM </a>
 </div>
-<span class="more-meta"> 4004 words </span>
-<span class="more-meta"> 8 mins read </span>
+<span class="more-meta"> 4078 words </span>
+<span class="more-meta"> 9 mins read </span>
 </div>
 </header>
 <div class="post-toc" id="post-toc">
@@ -1001,7 +1001,12 @@ $$
 </ol>
 <p>下面分项分析：</p>
 <ol>
-<li><code>forAll(List, i)</code>第一个参数是一个<code>List</code>，温度<code>volScalarField也</code>是一个<code>List</code>，包含了所有的体心网格列表，<code>i</code>表示每次循环中读取到的网格。这里是对各相的导数进行判断，乘积不为0即说明在界面区域，然后判断两相分数之和是否到达了设定的阈值，随后将<code>Tmask</code>设为1，之后在讲这个mask与<code>T-Tsat</code>相乘，达到了限定相变位置的目的。但是<code>iCEF</code>中使用的<code>interfaceProperties</code>提供了<code>nearInterface()</code>的方法，虽然在相变模型中不好直接访问，但可以直接用alpha场构建类似的mask。</li>
+<li>
+<p><code>forAll(List, i)</code>第一个参数是一个<code>List</code>，温度<code>volScalarField也</code>是一个<code>List</code>，包含了所有的体心网格列表，<code>i</code>表示每次循环中读取到的网格。这里是对各相的导数进行判断，乘积不为0即说明在界面区域，然后判断两相分数之和是否到达了设定的阈值，随后将<code>Tmask</code>设为1，之后在讲这个mask与<code>T-Tsat</code>相乘，达到了限定相变位置的目的。但是<code>iCEF</code>中使用的<code>interfaceProperties</code>提供了<code>nearInterface()</code>的方法，虽然在相变模型中不好直接访问，但可以直接用alpha场构建类似的mask。</p>
+<blockquote>
+<p>经过测试，这里的<code>Tmask</code>将相变区域仅限值在气液相变区域，这导致纯液或纯气区域一直不会发生相变，例如加热平板上一直不会有气泡，这里考虑将这个限制去掉</p>
+</blockquote>
+</li>
 </ol>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1048,6 +1053,11 @@ $$
 <a href="/tags/code/">code</a>
 </div>
 <nav class="post-nav">
+<a class="prev" href="/post/irmf1/">
+<i class="iconfont icon-left"></i>
+<span class="prev-text nav-default">IRMIF中的多流体模型（一）</span>
+<span class="prev-text nav-mobile">Prev</span>
+</a>
 <a class="next" href="/post/loveletter/">
 <span class="next-text nav-default">Loveletter</span>
 <span class="next-text nav-mobile">Next</span>
