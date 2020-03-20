@@ -32,7 +32,7 @@
 <meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" itemprop="description"/>
 <meta content="2020-03-04T15:34:30+08:00" itemprop="datePublished"/>
 <meta content="2020-03-04T15:34:30+08:00" itemprop="dateModified"/>
-<meta content="8540" itemprop="wordCount"/>
+<meta content="8850" itemprop="wordCount"/>
 <meta content="E&amp;C,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
 <meta content="IRMIF中的多流体模型" name="twitter:title"/>
 <meta content="IcoReactingMultiphaseInterFoam中多流体模型结构" name="twitter:description"/>
@@ -98,7 +98,7 @@
 <div class="post-category">
 <a href="/categories/openfoam/"> OpenFOAM </a>
 </div>
-<span class="more-meta"> 8540 words </span>
+<span class="more-meta"> 8850 words </span>
 <span class="more-meta"> 18 mins read </span>
 </div>
 </header>
@@ -1612,6 +1612,149 @@ $$</p>
 <p>多项式拟合的优点很突出：不需要很高的阶数在给定小区间内精度就很高，缺点是在大区间内精度急剧下降。</p>
 <p>完全创建<code>thermo</code>后，就完成了宏中<code>CompType</code>的创建，求解器中只有两类：<code>MultiCoponentPhaseModel</code>和<code>PurePhaseModel</code>分别对应混合物和纯质。这两个类进一步定义了相内组分场的计算和接口。纯质直接返回组分场<code>Y_</code>，而混合物通过<code>solveYi()</code>求解组分，前面已有分析。</p>
 <p>定义纯质或混合物后，这个类作为模版参数传入<code>MomentumType</code>中，本例中有<code>MovingPhaseModel</code>和<code>StaticPhaseModel</code>，对应的，就是流体和固体。固体中的速度，通量都为0，而流体中的返回的是注册在<code>mesh</code>中的速度、通量等。</p>
+<p>在<code>thermophysicalProperties.X</code>中按字段修改后并不能直接使用该物性模型，在<code>InterfaceCompositionModels/InterfaceCompositionModels.C</code>中，求解器只预定义了有限几种组合形式。如若按上述表述，应在该文件中增加引用</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"icoPolynomial.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"polynomialTransport.H"</span><span class="cp">
+</span><span class="cp"></span><span class="cp">#</span><span class="cp">include</span> <span class="cpf">"hPolynomialThermo.H"</span><span class="cp">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>并增加新的类型的声明和定义</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="k">typedef</span>
+        <span class="n">polynomialTransport</span>
+        <span class="o">&lt;</span>
+            <span class="n">species</span><span class="o">:</span><span class="o">:</span><span class="n">thermo</span>
+            <span class="o">&lt;</span>
+                <span class="n">hPolynomialThermo</span>
+                <span class="o">&lt;</span>
+                    <span class="n">icoPolynomial</span><span class="o">&lt;</span><span class="n">specie</span><span class="o">&gt;</span>
+                <span class="o">&gt;</span><span class="p">,</span>
+                <span class="n">sensibleEnthalpy</span>
+            <span class="o">&gt;</span>
+        <span class="o">&gt;</span> <span class="n">polyRhoHThermoPhysics</span><span class="p">;</span>
+    <span class="c1">// Polynomial fitting
+</span><span class="c1"></span>        <span class="n">makeInterfaceContSpecieMixtureType</span>
+        <span class="p">(</span>
+            <span class="n">kineticGasEvaporation</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoThermo</span><span class="p">,</span>
+            <span class="n">pureMixture</span><span class="p">,</span>
+            <span class="n">polyRhoHThermoPhysics</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoReactionThermo</span><span class="p">,</span>
+            <span class="n">multiComponentMixture</span><span class="p">,</span>
+            <span class="n">constIncompressibleGasHThermoPhysics</span>
+        <span class="p">)</span><span class="p">;</span>
+        <span class="n">makeInterfaceContSpecieMixtureType</span>
+        <span class="p">(</span>
+            <span class="n">kineticGasEvaporation</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoThermo</span><span class="p">,</span>
+            <span class="n">pureMixture</span><span class="p">,</span>
+            <span class="n">polyRhoHThermoPhysics</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoReactionThermo</span><span class="p">,</span>
+            <span class="n">multiComponentMixture</span><span class="p">,</span>
+            <span class="n">polyRhoHThermoPhysics</span>
+        <span class="p">)</span><span class="p">;</span>
+        <span class="n">makeInterfaceContSpecieMixtureType</span>
+        <span class="p">(</span>
+            <span class="n">Lee</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoThermo</span><span class="p">,</span>
+            <span class="n">pureMixture</span><span class="p">,</span>
+            <span class="n">polyRhoHThermoPhysics</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoReactionThermo</span><span class="p">,</span>
+            <span class="n">multiComponentMixture</span><span class="p">,</span>
+            <span class="n">constIncompressibleGasHThermoPhysics</span>
+        <span class="p">)</span><span class="p">;</span>
+        <span class="n">makeInterfaceContSpecieMixtureType</span>
+        <span class="p">(</span>
+            <span class="n">Lee</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoThermo</span><span class="p">,</span>
+            <span class="n">pureMixture</span><span class="p">,</span>
+            <span class="n">polyRhoHThermoPhysics</span><span class="p">,</span>
+            <span class="n">heRhoThermo</span><span class="p">,</span>
+            <span class="n">rhoReactionThermo</span><span class="p">,</span>
+            <span class="n">multiComponentMixture</span><span class="p">,</span>
+            <span class="n">polyRhoHThermoPhysics</span>
+        <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>由此可见，每新增一个模型，都要在该文件中声明一遍。</p>
 <p>至此，完整的<code>phaseModel</code>就构建完成了。</p>
 </div>
 <div class="post-copyright">

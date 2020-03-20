@@ -914,4 +914,80 @@ $$
 
 定义纯质或混合物后，这个类作为模版参数传入`MomentumType`中，本例中有`MovingPhaseModel`和`StaticPhaseModel`，对应的，就是流体和固体。固体中的速度，通量都为0，而流体中的返回的是注册在`mesh`中的速度、通量等。
 
+在`thermophysicalProperties.X`中按字段修改后并不能直接使用该物性模型，在`InterfaceCompositionModels/InterfaceCompositionModels.C`中，求解器只预定义了有限几种组合形式。如若按上述表述，应在该文件中增加引用
+
+```c++
+#include "icoPolynomial.H"
+#include "polynomialTransport.H"
+#include "hPolynomialThermo.H"
+```
+
+并增加新的类型的声明和定义
+
+```c++
+    typedef
+        polynomialTransport
+        <
+            species::thermo
+            <
+                hPolynomialThermo
+                <
+                    icoPolynomial<specie>
+                >,
+                sensibleEnthalpy
+            >
+        > polyRhoHThermoPhysics;
+    // Polynomial fitting
+        makeInterfaceContSpecieMixtureType
+        (
+            kineticGasEvaporation,
+            heRhoThermo,
+            rhoThermo,
+            pureMixture,
+            polyRhoHThermoPhysics,
+            heRhoThermo,
+            rhoReactionThermo,
+            multiComponentMixture,
+            constIncompressibleGasHThermoPhysics
+        );
+        makeInterfaceContSpecieMixtureType
+        (
+            kineticGasEvaporation,
+            heRhoThermo,
+            rhoThermo,
+            pureMixture,
+            polyRhoHThermoPhysics,
+            heRhoThermo,
+            rhoReactionThermo,
+            multiComponentMixture,
+            polyRhoHThermoPhysics
+        );
+        makeInterfaceContSpecieMixtureType
+        (
+            Lee,
+            heRhoThermo,
+            rhoThermo,
+            pureMixture,
+            polyRhoHThermoPhysics,
+            heRhoThermo,
+            rhoReactionThermo,
+            multiComponentMixture,
+            constIncompressibleGasHThermoPhysics
+        );
+        makeInterfaceContSpecieMixtureType
+        (
+            Lee,
+            heRhoThermo,
+            rhoThermo,
+            pureMixture,
+            polyRhoHThermoPhysics,
+            heRhoThermo,
+            rhoReactionThermo,
+            multiComponentMixture,
+            polyRhoHThermoPhysics
+        );
+```
+
+由此可见，每新增一个模型，都要在该文件中声明一遍。
+
 至此，完整的`phaseModel`就构建完成了。
