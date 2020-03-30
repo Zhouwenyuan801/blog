@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+<title>IRMIF中接触角的设置 - MrZZQi's Blog</title>
+<meta content="webkit" name="renderer"/>
+<meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport"/>
+<meta content="no-transform" http-equiv="Cache-Control"/>
+<meta content="no-siteapp" http-equiv="Cache-Control"/>
+<meta content="#f8f5ec" name="theme-color"/>
+<meta content="#f8f5ec" name="msapplication-navbutton-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="#f8f5ec" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="ZZQ" name="author"/><meta content="icoReactingMultiphaseInterFoam中接触角的设置" name="description"/><meta content="Contact Angle, OpenFOAM" name="keywords"/>
+<meta content="Hugo 0.64.1 with theme even" name="generator"/>
+<link href="http://localhost:1313/post/irmifca/" rel="canonical"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet"/>
+<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" rel="stylesheet"/>
+<meta content="IRMIF中接触角的设置" property="og:title"/>
+<meta content="icoReactingMultiphaseInterFoam中接触角的设置" property="og:description"/>
+<meta content="article" property="og:type"/>
+<meta content="http://localhost:1313/post/irmifca/" property="og:url"/>
+<meta content="2020-03-30T13:03:32+08:00" property="article:published_time"/>
+<meta content="2020-03-30T13:03:32+08:00" property="article:modified_time"/>
+<meta content="IRMIF中接触角的设置" itemprop="name"/>
+<meta content="icoReactingMultiphaseInterFoam中接触角的设置" itemprop="description"/>
+<meta content="2020-03-30T13:03:32+08:00" itemprop="datePublished"/>
+<meta content="2020-03-30T13:03:32+08:00" itemprop="dateModified"/>
+<meta content="4110" itemprop="wordCount"/>
+<meta content="Contact Angle,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
+<meta content="IRMIF中接触角的设置" name="twitter:title"/>
+<meta content="icoReactingMultiphaseInterFoam中接触角的设置" name="twitter:description"/>
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+</head>
+<body>
+<div class="mobile-navbar" id="mobile-navbar">
+<div class="mobile-header-logo">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<div class="mobile-navbar-icon">
+<span></span>
+<span></span>
+<span></span>
+</div>
+</div>
+<nav class="mobile-menu slideout-menu" id="mobile-menu">
+<ul class="mobile-menu-list">
+<a href="/">
+<li class="mobile-menu-item">Home</li>
+</a><a href="/post/">
+<li class="mobile-menu-item">Archives</li>
+</a><a href="/tags/">
+<li class="mobile-menu-item">Tags</li>
+</a><a href="/categories/">
+<li class="mobile-menu-item">Categories</li>
+</a>
+</ul>
+</nav>
+<div class="container" id="mobile-panel">
+<header class="header" id="header">
+<div class="logo-wrapper">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<nav class="site-navbar">
+<ul class="menu" id="menu">
+<li class="menu-item">
+<a class="menu-item-link" href="/">Home</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/post/">Archives</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/tags/">Tags</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/categories/">Categories</a>
+</li>
+</ul>
+</nav>
+</header>
+<main class="main" id="main">
+<div class="content-wrapper">
+<div class="content" id="content">
+<article class="post">
+<header class="post-header">
+<h1 class="post-title">IRMIF中接触角的设置</h1>
+<div class="post-meta">
+<span class="post-time"> Monday, March 30, 2020 </span>
+<div class="post-category">
+<a href="/categories/openfoam/"> OpenFOAM </a>
+</div>
+<span class="more-meta"> 4110 words </span>
+<span class="more-meta"> 9 mins read </span>
+</div>
+</header>
+<div class="post-toc" id="post-toc">
+<h2 class="post-toc-title">Contents</h2>
+<div class="post-toc-content">
+<nav id="TableOfContents">
+<ul>
+<li><a href="#前言">前言</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<div class="post-content">
+<h2 id="前言">前言</h2>
+<p>在使用<code>icoReactingMultiphaseInterFoam</code>计算微重力下边界浸润情况时，原例中使用的是<code>zeroGradient</code>，并没有形成接触角的条件，因此改而采用<code>constantAlphaConotactAngle</code>边界条件。但是在应用过程中出现了明显的问题，即无论如何修改各个组分的边界条件，或者更改组分的类型，虽然能够顺利进行就算，但是页面边界始终未出现应有的角度。而参考<code>interFoam</code>给出的例程<code>capilaryFlow</code>，给定接触角后<code>cACA</code>边界是可以进行接触角修正的。因此，这里详细看一下这种边界处理接触角的过程，以及为什么求解器中不能正确还原接触角。</p>
+<p>关于OpenFOAM中边界条件的处理可以参考这两篇博客<a href="http://xiaopingqiu.github.io/2016/04/02/Boundary-conditions-in-OpenFOAM1/">[1]</a><a href="https://www.cfd-online.com/Forums/openfoam-programming-development/129271-how-boundary-conditions-called-openfoam-solvers.html">[2]</a></p>
+<p>大体上，边界条件是在物理场读入初始化时同时被创建并修正，在每一次涉及到物理场方程的运算时，也被自动修正。</p>
+<blockquote>
+<p>Those BC types that need updating and evaluation at each time step, they either have updateCoeffs() or evaluate() in the class definition, virtual of course.</p>
+<p>When a fvMatrix<!-- raw HTML omitted --> Eqn is created, the updateCoeffs() is called in its constructor. Then in Eqn().solve() the function correctBoundaryConditions() is called, which contains evaluate().</p>
+<p>Now the two functions are implemented differently in every BC, and the solver would also execute different things out according to each BC type defined.</p>
+</blockquote>
+<p>边界条件需确定两件事：1.物理场在边界上的取值。2.物理场在边界的变化情况（梯度）。这两者分别在对流项和扩散项的离散过程中被用到：
+$$
+\int_v\nabla \cdot (\rho U\phi)dV = \sum_f m_f \phi_f
+$$</p>
+<p>$$
+\int_v \nabla \cdot(\Gamma \nabla \phi)dV  = \sum_f (\Gamma \nabla \phi_f)\cdot S_f
+$$</p>
+<p>其中，$\phi_f$是面上的值，$S_f$是面向量，为面法向方向，大小为面积的矢量。当网格面包含物理边界时，就需要用到边界条件。</p>
+<p>在OpenFOAM中，边界上的值、梯度通过统一的表达式表达：
+$$
+\phi_f = A_1 \phi_c + B_1
+$$</p>
+<p>$$
+\nabla \phi_f = A_2 \phi_c + B_2
+$$</p>
+<p>其中，$\phi_c$是边界相邻网格中心的值，$A_1,A_2,B_1,B_2$是边界类中定义的系数。在类中名字分别为<code>valueInternalCoeffs </code>,<code>valueBoundaryCoeffs </code>,<code>gradientInternalCoeffs </code>,<code>gradientBoundaryCoeffs </code>。不同的边界条件，四个系数的表达式也不同。</p>
+<p>通过调用<code>updateCoeffs</code>和<code>evaluate</code>函数完成边界值的更新，作者给出的解释</p>
+<blockquote>
+<p>- on correctBoundaryConditions() for a field</p>
+<p>- on updateCoeffs() at matrix creation</p>
+<p>correctBoundaryConditions is also called after the linear solver call automatically.</p>
+</blockquote>
+<p><code>correctBoundaryConditions()</code>中调用了了<code>evaluate</code>。一般来说，复杂边界多使用<code>updateCoeffs</code>，简单边界用<code>evaluate</code>。</p>
+<p>OpenFOAM中常见的边界条件多是由几类基本条件衍生的，最常见的是三类边界条件：<code>Dirichlet</code>，<code>Neumann</code>和混合边界条件。</p>
+<p>对于<code>Dirichlet</code>条件，即边界上给定数值，
+$$
+x_p = a
+$$</p>
+<p>$$
+\nabla x_p = -\Delta \cdot x_c + \Delta \cdot a = (C-x_c)\cdot \Delta
+$$</p>
+<p>其中，$x_p$是边界值，$x_c$是相邻网格体心值，$\Delta$是网格中心至边界的倒数，$a$为常数。</p>
+<p>对应的，四个常数的取值为
+$$
+A_1 = 0; A_2 = C; B_1 = -\Delta; B_2 = \Delta\cdot a
+$$
+在<code>fixedValue</code>边界的代码中，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">fixedValueFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">valueInternalCoeffs</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span><span class="o">&amp;</span>
+<span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span>
+    <span class="p">(</span>
+        <span class="k">new</span> <span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">pTraits</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">zero</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">fixedValueFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">valueBoundaryCoeffs</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span><span class="o">&amp;</span>
+<span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">fixedValueFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">gradientInternalCoeffs</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">pTraits</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">one</span><span class="o">*</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">patch</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">deltaCoeffs</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">fixedValueFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">gradientBoundaryCoeffs</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">patch</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">deltaCoeffs</span><span class="p">(</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里出现的<code>*this</code>指边界本身，即边界上物理量的取值。</p>
+<p>而<code>zeroGradient</code>边界属于<code>Neumann</code>边界，即给定边界梯度为0</p>
+<p>$$
+x_p = x_c
+$$</p>
+<p>$$
+\nabla x_p = 0
+$$</p>
+<p>对应的，
+$$
+A_1 = 1; A_2 = 0; B_1 = 0; B_2 = 0
+$$
+在实现时，代码为，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">zeroGradientFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">valueInternalCoeffs</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span><span class="o">&amp;</span>
+<span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span>
+    <span class="p">(</span>
+        <span class="k">new</span> <span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">pTraits</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">one</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">zeroGradientFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">valueBoundaryCoeffs</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span><span class="o">&amp;</span>
+<span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span>
+    <span class="p">(</span>
+        <span class="k">new</span> <span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">pTraits</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">zero</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">zeroGradientFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">gradientInternalCoeffs</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span>
+    <span class="p">(</span>
+        <span class="k">new</span> <span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">pTraits</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">zero</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Type</span><span class="o">&gt;</span>
+<span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">zeroGradientFvPatchField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">gradientBoundaryCoeffs</span><span class="p">(</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span> <span class="o">&gt;</span>
+    <span class="p">(</span>
+        <span class="k">new</span> <span class="n">Field</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="p">(</span><span class="k">this</span><span class="o">-</span><span class="o">&gt;</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">pTraits</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">zero</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>另一类<code>Neumann</code>边界为你<code>fixedGradient</code>，即给定边界值，</p>
+<p>$$
+x_p = x_c + \frac{G}{\Delta}
+$$</p>
+<p>$$
+\nabla x_p = G
+$$</p>
+<p>即给定边界处梯度。</p>
+<p>另一类混合边界为上述两种的结合。除此之外，大部分边界都是基于这三种发展的。</p>
+<p>本例中拟使用的<code>constantAlphaConotactAngle</code>边界就是基于<code>fixedGradient</code>边界演化的。下面具体看改边界的头文件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">class</span> <span class="nc">constantAlphaContactAngleFvPatchScalarField</span>
+<span class="o">:</span>
+    <span class="k">public</span> <span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span>
+<span class="p">{</span>
+    <span class="c1">// Private data
+</span><span class="c1"></span>
+        <span class="c1">//- Equilibrium contact angle
+</span><span class="c1"></span>        <span class="n">scalar</span> <span class="n">theta0_</span><span class="p">;</span>
+ 		<span class="p">.</span><span class="p">.</span><span class="p">.</span>        
+        <span class="c1">//- Return the equilibrium contact-angle
+</span><span class="c1"></span>        <span class="k">virtual</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span> <span class="n">theta</span>
+        <span class="p">(</span>
+            <span class="k">const</span> <span class="n">fvPatchVectorField</span><span class="o">&amp;</span> <span class="n">Up</span><span class="p">,</span>
+            <span class="k">const</span> <span class="n">fvsPatchVectorField</span><span class="o">&amp;</span> <span class="n">nHat</span>
+        <span class="p">)</span> <span class="k">const</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">scalarField</span><span class="o">&gt;</span>
+<span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">constantAlphaContactAngleFvPatchScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">theta</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">fvPatchVectorField</span><span class="o">&amp;</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">fvsPatchVectorField</span><span class="o">&amp;</span>
+<span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span><span class="o">:</span><span class="o">:</span><span class="n">New</span><span class="p">(</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">theta0_</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>除了构造函数外，该类的唯一作用就是定义接触角<code>theta</code>的计算方法，这里是读取给定的数值并返回常量。</p>
+<p>其父类<code>alphaContactAngleTwoPhaseFvPatchScalarField</code>是更一般的方法，其中定义了大部分功能，只是把接触角计算留为纯虚，除常数子类外，还有动态接触角、温度相关接触角等其他派生类，可在运行时根据给定关键字动态选取。</p>
+<p>父类的构造为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">class</span> <span class="nc">alphaContactAngleTwoPhaseFvPatchScalarField</span>
+<span class="o">:</span>
+    <span class="k">public</span> <span class="n">fixedGradientFvPatchScalarField</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+
+    <span class="c1">// Abstract class, no runtime information
+</span><span class="c1"></span>
+    <span class="c1">//- Alpha limit options
+</span><span class="c1"></span>    <span class="k">enum</span> <span class="nc">limitControls</span>
+    <span class="p">{</span>
+        <span class="n">lcNone</span><span class="p">,</span>
+        <span class="n">lcGradient</span><span class="p">,</span>
+        <span class="n">lcZeroGradient</span><span class="p">,</span>
+        <span class="n">lcAlpha</span>
+    <span class="p">}</span><span class="p">;</span>
+    <span class="k">static</span> <span class="k">const</span> <span class="n">Enum</span><span class="o">&lt;</span><span class="n">limitControls</span><span class="o">&gt;</span> <span class="n">limitControlNames_</span><span class="p">;</span>
+    <span class="n">limitControls</span> <span class="n">limit_</span><span class="p">;</span>
+<span class="p">.</span><span class="p">.</span><span class="p">.</span>
+    <span class="c1">// Member functions
+</span><span class="c1"></span>
+        <span class="c1">//- Return the contact angle
+</span><span class="c1"></span>        <span class="k">virtual</span> <span class="n">tmp</span><span class="o">&lt;</span><span class="n">scalarField</span><span class="o">&gt;</span> <span class="n">theta</span>
+        <span class="p">(</span>
+            <span class="k">const</span> <span class="n">fvPatchVectorField</span><span class="o">&amp;</span> <span class="n">Up</span><span class="p">,</span>
+            <span class="k">const</span> <span class="n">fvsPatchVectorField</span><span class="o">&amp;</span> <span class="n">nHat</span>
+        <span class="p">)</span> <span class="k">const</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+        <span class="c1">//- Evaluate the patch field
+</span><span class="c1"></span>        <span class="k">virtual</span> <span class="kt">void</span> <span class="nf">evaluate</span>
+        <span class="p">(</span>
+            <span class="k">const</span> <span class="n">Pstream</span><span class="o">:</span><span class="o">:</span><span class="n">commsTypes</span> <span class="n">commsType</span><span class="o">=</span><span class="n">Pstream</span><span class="o">:</span><span class="o">:</span><span class="n">commsTypes</span><span class="o">:</span><span class="o">:</span><span class="n">blocking</span>
+        <span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>使用该类，要规定边界的限制方法，常用的就是使用<code>Gradient</code>方法限制。另外，定义了<code>evaluate</code>方法，前面提到过，这就是修正边界场时使用的函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="kt">void</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">evaluate</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">Pstream</span><span class="o">:</span><span class="o">:</span><span class="n">commsTypes</span>
+<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">limit_</span> <span class="o">=</span><span class="o">=</span> <span class="n">lcGradient</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">gradient</span><span class="p">(</span><span class="p">)</span> <span class="o">=</span>
+        <span class="n">patch</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">deltaCoeffs</span><span class="p">(</span><span class="p">)</span>
+       <span class="o">*</span><span class="p">(</span>
+           <span class="n">max</span><span class="p">(</span><span class="n">min</span>
+           <span class="p">(</span>
+               <span class="o">*</span><span class="k">this</span> <span class="o">+</span> <span class="n">gradient</span><span class="p">(</span><span class="p">)</span><span class="o">/</span><span class="n">patch</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">deltaCoeffs</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+               <span class="n">scalar</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="p">)</span><span class="p">,</span> <span class="n">scalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+           <span class="p">)</span> <span class="o">-</span> <span class="o">*</span><span class="k">this</span>
+       <span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">limit_</span> <span class="o">=</span><span class="o">=</span> <span class="n">lcZeroGradient</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">gradient</span><span class="p">(</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">fixedGradientFvPatchScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">evaluate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">limit_</span> <span class="o">=</span><span class="o">=</span> <span class="n">lcAlpha</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">scalarField</span><span class="o">:</span><span class="o">:</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="n">max</span><span class="p">(</span><span class="n">min</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">,</span> <span class="n">scalar</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="p">)</span><span class="p">,</span> <span class="n">scalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>如代码所述，若选定<code>Gradient</code>方法，该函数起到的作用是对边界的梯度值更新：
+$$
+\nabla \alpha’ = \Delta ([\alpha_p +\nabla \alpha/\Delta ]_{0-1} -\alpha_p)
+$$
+即将边界相分数限制在合理范围内。阅读求解器代码，这个函数在构造场和<code>alpha1.Eqn</code>求解结束后被调用。然而这并不是接触角的修正过程，更没有出现<code>theta()</code>和界面形状的关联。因此，需要重新寻找调用该边界<code>theta()</code>函数的地方。</p>
+<p>经查，对接触角的修正出现在<code>interfaceProperties.C</code>中<code>correctContactAngle</code>函数中。要理解代码，先要明白是如何通过接触角修正界面形状的，这里可以参见<a href="http://arxiv.org/abs/1907.05054">Grunding的文章</a>和<a href="https://www.cfd-online.com/Forums/openfoam-solving/81101-interfoam-contact-angle.html">这篇博客</a>。</p>
+<p>在使用VOF的求解器中，接触角在计算界面曲率时引入，具体的方法是更正壁面法向和界面法向的夹角
+$$
+N_y / \sqrt{N_x^2 + N_z^2} = \cos(\theta)
+$$
+或
+$$
+\vec{n_{f}}\cdot\vec{ n_w }= \cos(\theta)
+$$
+其中，$\theta$是给定的接触角，$\vec{n_{f}}$是界面法向，$\vec{ n_w }$是壁面法向。那么求解器中应该是先计算出流场内的界面法向，再根据边界条件对边界值调用<code>theta()</code>修正，这也是<code>icoRMF</code>中最可能出错的地方。那么下面具体看<code>interFoam</code>是如何修正的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="kt">void</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">interfaceProperties</span><span class="o">:</span><span class="o">:</span><span class="n">correctContactAngle</span>
+<span class="p">(</span>
+    <span class="n">surfaceVectorField</span><span class="o">:</span><span class="o">:</span><span class="n">Boundary</span><span class="o">&amp;</span> <span class="n">nHatb</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">surfaceVectorField</span><span class="o">:</span><span class="o">:</span><span class="n">Boundary</span><span class="o">&amp;</span> <span class="n">gradAlphaf</span>
+<span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="n">fvMesh</span><span class="o">&amp;</span> <span class="n">mesh</span> <span class="o">=</span> <span class="n">alpha1_</span><span class="p">.</span><span class="n">mesh</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Boundary</span><span class="o">&amp;</span> <span class="n">abf</span> <span class="o">=</span> <span class="n">alpha1_</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="k">const</span> <span class="n">fvBoundaryMesh</span><span class="o">&amp;</span> <span class="n">boundary</span> <span class="o">=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">boundary</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>传递进函数的是界面法向的边界场，以及相分数梯度的边界场。随后函数调用了相分数的边界场，以及目前网格的所有边界。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">forAll</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">patchi</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">isA</span><span class="o">&lt;</span><span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="n">abf</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">)</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&amp;</span> <span class="n">acap</span> <span class="o">=</span>
+                <span class="k">const_cast</span><span class="o">&lt;</span><span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&amp;</span><span class="o">&gt;</span>
+                <span class="p">(</span>
+                    <span class="n">refCast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&gt;</span>
+                    <span class="p">(</span>
+                        <span class="n">abf</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">)</span><span class="p">;</span>
+            <span class="n">fvsPatchVectorField</span><span class="o">&amp;</span> <span class="n">nHatp</span> <span class="o">=</span> <span class="n">nHatb</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">;</span>
+            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">theta</span>
+            <span class="p">(</span>
+                <span class="n">degToRad</span><span class="p">(</span><span class="p">)</span> <span class="o">*</span> <span class="n">acap</span><span class="p">.</span><span class="n">theta</span><span class="p">(</span><span class="n">U_</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">,</span> <span class="n">nHatp</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+
+            <span class="k">const</span> <span class="n">vectorField</span> <span class="nf">nf</span>
+            <span class="p">(</span>
+                <span class="n">boundary</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">.</span><span class="n">nf</span><span class="p">(</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+
+            <span class="c1">// Reset nHatp to correspond to the contact angle
+</span></code></pre></td></tr></table>
+</div>
+</div><p>对于相分数的每一个边界，判断它是不是<code>alphaContactAngleTwoPhaseFvPatchScalarField</code>或其子类，如果是的话，获得明确指向该边界的引用，关于<code>refCast</code>其实是<code>dynamic_cast</code>，和<code>const_cast</code>的解释见<a href="https://en.cppreference.com/w/cpp/language/dynamic_cast">[3]</a><a href="https://stackoverflow.com/questions/13783312/how-does-dynamic-cast-work">[4]</a><a href="https://en.cppreference.com/w/cpp/language/const_cast">[5]</a><a href="https://stackoverflow.com/questions/19554841/how-to-use-const-cast/19554871">[6]</a>。随后拿到接触角，注意，这里传递的是速度的边界场（后面试过其他物理场都不行）和界面法向在某个边界上的值，之后转化为弧度。随后再拿到边界上壁面的法向矢量。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">a12</span><span class="p">(</span><span class="n">nHatp</span> <span class="o">&amp;</span> <span class="n">nf</span><span class="p">)</span><span class="p">;</span> <span class="c1">//其实是cos beta，beta是当前的接触角
+</span><span class="c1"></span>            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">b1</span><span class="p">(</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="p">)</span><span class="p">;</span> <span class="c1">//cos theta 给定的接触角
+</span><span class="c1"></span>
+            <span class="n">scalarField</span> <span class="nf">b2</span><span class="p">(</span><span class="n">nHatp</span><span class="p">.</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>  
+            <span class="n">forAll</span><span class="p">(</span><span class="n">b2</span><span class="p">,</span> <span class="n">facei</span><span class="p">)</span>  <span class="c1">// cos (beta - theta)，应修改的角度
+</span><span class="c1"></span>            <span class="p">{</span>
+                <span class="n">b2</span><span class="p">[</span><span class="n">facei</span><span class="p">]</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">acos</span><span class="p">(</span><span class="n">a12</span><span class="p">[</span><span class="n">facei</span><span class="p">]</span><span class="p">)</span> <span class="o">-</span> <span class="n">theta</span><span class="p">[</span><span class="n">facei</span><span class="p">]</span><span class="p">)</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">det</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">a12</span><span class="o">*</span><span class="n">a12</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">scalarField</span> <span class="nf">a</span><span class="p">(</span><span class="p">(</span><span class="n">b1</span> <span class="o">-</span> <span class="n">a12</span><span class="o">*</span><span class="n">b2</span><span class="p">)</span><span class="o">/</span><span class="n">det</span><span class="p">)</span><span class="p">;</span>
+            <span class="n">scalarField</span> <span class="nf">b</span><span class="p">(</span><span class="p">(</span><span class="n">b2</span> <span class="o">-</span> <span class="n">a12</span><span class="o">*</span><span class="n">b1</span><span class="p">)</span><span class="o">/</span><span class="n">det</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">nHatp</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">nf</span> <span class="o">+</span> <span class="n">b</span><span class="o">*</span><span class="n">nHatp</span><span class="p">;</span>
+            <span class="n">nHatp</span> <span class="o">/</span><span class="o">=</span> <span class="p">(</span><span class="n">mag</span><span class="p">(</span><span class="n">nHatp</span><span class="p">)</span> <span class="o">+</span> <span class="n">deltaN_</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">acap</span><span class="p">.</span><span class="n">gradient</span><span class="p">(</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">nf</span> <span class="o">&amp;</span> <span class="n">nHatp</span><span class="p">)</span><span class="o">*</span><span class="n">mag</span><span class="p">(</span><span class="n">gradAlphaf</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">)</span><span class="p">;</span>
+            <span class="n">acap</span><span class="p">.</span><span class="n">evaluate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>随后构造的变量如注释表示，这里其实是几何问题，即已知当前、预定接触角，以及目前界面法向和边界法向矢量，求修正后的界面矢量，画图表示为，</p>
+<p><img alt="image-20200330140616397" src="https://tva1.sinaimg.cn/large/00831rSTly1gdbx6nqxkej30og0cmgnr.jpg"/></p>
+<p>然后将梯度更新再确保有界。</p>
+<p>更新接触角是在计算曲率的<code>calculateK</code>函数中调用的，该函数中，计算界面法向场后即调用接触角函数，之后用更新后的法向场计算曲率。而<code>calculateK</code>在构造<code>interfaceProperties</code>对象时调用，在每次<code>correct</code>时也调用你。在<code>interFoam</code>中，所创建的<code>mixture</code>继承自<code>interfaceProperties</code>，因此，在<code>createFields.H</code>中，求解相方程后均修正了界面形状。</p>
+<p>这套处理逻辑应该是有效的，如前所述，<code>interFoam</code>可以计算毛细流。那么就要看一下<code>iRMIF</code>中是哪些环节出了问题。</p>
+<p>在本例中，求解器并没有创建<code>mixture</code>，而是创建了<code>multiphaseSystem</code>对象<code>fluid</code>，对象中不包含<code>interfaceProperties</code>中的方法，而本身的<code>correct</code>方法（在<code>T.Eqn.</code>中使用）作用时更新温度场。但是在你<code>phaseSystem</code>中重新写了<code>nHatfv</code>函数以计算界面法向。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">surfaceVectorField</span><span class="o">&gt;</span> <span class="n">Foam</span><span class="o">:</span><span class="o">:</span><span class="n">phaseSystem</span><span class="o">:</span><span class="o">:</span><span class="n">nHatfv</span>
+<span class="p">(</span>
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">alpha1</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">&amp;</span> <span class="n">alpha2</span>
+<span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+
+    <span class="n">surfaceVectorField</span> <span class="nf">gradAlphaf</span>
+    <span class="p">(</span>
+        <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">alpha2</span><span class="p">)</span><span class="o">*</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">grad</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span><span class="p">)</span>
+      <span class="o">-</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span><span class="o">*</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">grad</span><span class="p">(</span><span class="n">alpha2</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="k">const</span> <span class="n">dimensionedScalar</span> <span class="nf">deltaN</span>
+    <span class="p">(</span>
+        <span class="sa"></span><span class="s">"</span><span class="s">deltaN</span><span class="s">"</span><span class="p">,</span>
+        <span class="mf">1e-8</span><span class="o">/</span><span class="n">cbrt</span><span class="p">(</span><span class="n">average</span><span class="p">(</span><span class="n">mesh_</span><span class="p">.</span><span class="n">V</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="c1">// Face unit interface normal
+</span><span class="c1"></span>    <span class="k">return</span> <span class="n">gradAlphaf</span><span class="o">/</span><span class="p">(</span><span class="n">mag</span><span class="p">(</span><span class="n">gradAlphaf</span><span class="p">)</span> <span class="o">+</span> <span class="n">deltaN</span><span class="p">)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可见，对比<code>interFoam</code>，明显缺少了边界修正的过程。改进方法有两种：1. 构造<code>interfaceProperties</code>对象，使用标准接口处理接触角。2.修改<code>nHatfv</code>函数，植入接触角修正过程。初步评估第二种对体系改动小一些，因此选择第二种，增加如下代码，即可实现接触角的修正</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">tmp</span><span class="o">&lt;</span><span class="n">surfaceVectorField</span><span class="o">&gt;</span> <span class="n">tnhatfv</span> <span class="o">=</span> <span class="n">gradAlphaf</span><span class="o">/</span><span class="p">(</span><span class="n">mag</span><span class="p">(</span><span class="n">gradAlphaf</span><span class="p">)</span> <span class="o">+</span> <span class="n">deltaN</span><span class="p">)</span><span class="p">;</span>
+    <span class="c1">// Face unit interface normal
+</span><span class="c1"></span>    <span class="n">surfaceVectorField</span><span class="o">&amp;</span> <span class="n">nhatfv</span> <span class="o">=</span> <span class="n">tnhatfv</span><span class="p">.</span><span class="n">ref</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+    <span class="n">surfaceVectorField</span><span class="o">:</span><span class="o">:</span><span class="n">Boundary</span><span class="o">&amp;</span> <span class="n">nHatb</span> <span class="o">=</span> <span class="n">nhatfv</span><span class="p">.</span><span class="n">boundaryFieldRef</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+    <span class="k">const</span> <span class="n">surfaceVectorField</span><span class="o">:</span><span class="o">:</span><span class="n">Boundary</span><span class="o">&amp;</span> <span class="n">gradAlphafb</span> <span class="o">=</span> <span class="n">gradAlphaf</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="k">const</span> <span class="n">volScalarField</span><span class="o">:</span><span class="o">:</span><span class="n">Boundary</span><span class="o">&amp;</span> <span class="n">a1bf</span> <span class="o">=</span> <span class="n">alpha1</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+    <span class="c1">// const volScalarField::Boundary&amp; a2bf = alpha2.boundaryField();
+</span><span class="c1"></span>
+    <span class="k">const</span> <span class="n">fvBoundaryMesh</span><span class="o">&amp;</span> <span class="n">boundary</span> <span class="o">=</span> <span class="n">mesh_</span><span class="p">.</span><span class="n">boundary</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+
+
+    <span class="n">forAll</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">patchi</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">isA</span><span class="o">&lt;</span><span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a1bf</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">)</span><span class="p">)</span>
+        <span class="p">{</span>
+
+            <span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&amp;</span> <span class="n">acap</span> <span class="o">=</span>
+                <span class="k">const_cast</span><span class="o">&lt;</span><span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&amp;</span><span class="o">&gt;</span>
+                <span class="p">(</span>
+                    <span class="n">refCast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">alphaContactAngleTwoPhaseFvPatchScalarField</span><span class="o">&gt;</span>
+                    <span class="p">(</span>
+                        <span class="n">a1bf</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">)</span><span class="p">;</span>
+
+            <span class="n">fvsPatchVectorField</span><span class="o">&amp;</span> <span class="n">nHatp</span> <span class="o">=</span> <span class="n">nHatb</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">;</span>
+
+            <span class="n">volVectorField</span> <span class="nf">U_</span><span class="p">(</span>
+                <span class="n">IOobject</span>
+                <span class="p">(</span>
+                    <span class="sa"></span><span class="s">"</span><span class="s">U_</span><span class="s">"</span><span class="p">,</span>
+                    <span class="n">mesh_</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">timeName</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+                    <span class="n">mesh_</span>
+                <span class="p">)</span><span class="p">,</span>
+                <span class="n">mesh_</span><span class="p">,</span>
+                <span class="n">dimensionedVector</span><span class="p">(</span><span class="n">dimVelocity</span><span class="p">,</span> <span class="n">Zero</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+            <span class="n">forAllConstIters</span><span class="p">(</span><span class="n">phaseModels_</span><span class="p">,</span> <span class="n">iter</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">U_</span> <span class="o">+</span><span class="o">=</span> <span class="n">iter</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="p">)</span> <span class="o">*</span> <span class="n">iter</span><span class="p">(</span><span class="p">)</span><span class="o">-</span><span class="o">&gt;</span><span class="n">U</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">theta</span>
+            <span class="p">(</span>
+                <span class="n">degToRad</span><span class="p">(</span><span class="n">acap</span><span class="p">.</span><span class="n">theta</span><span class="p">(</span><span class="n">U_</span><span class="p">.</span><span class="n">boundaryField</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">,</span> <span class="n">nHatp</span><span class="p">)</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+
+            <span class="k">const</span> <span class="n">vectorField</span> <span class="nf">nf</span>
+            <span class="p">(</span>
+                <span class="n">boundary</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">.</span><span class="n">nf</span><span class="p">(</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+
+            <span class="c1">// Reset nHatp to correspond to the contact angle
+</span><span class="c1"></span>
+            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">a12</span><span class="p">(</span><span class="n">nHatp</span> <span class="o">&amp;</span> <span class="n">nf</span><span class="p">)</span><span class="p">;</span>
+            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">b1</span><span class="p">(</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">scalarField</span> <span class="nf">b2</span><span class="p">(</span><span class="n">nHatp</span><span class="p">.</span><span class="n">size</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+            <span class="n">forAll</span><span class="p">(</span><span class="n">b2</span><span class="p">,</span> <span class="n">facei</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">b2</span><span class="p">[</span><span class="n">facei</span><span class="p">]</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">acos</span><span class="p">(</span><span class="n">a12</span><span class="p">[</span><span class="n">facei</span><span class="p">]</span><span class="p">)</span> <span class="o">-</span> <span class="n">theta</span><span class="p">[</span><span class="n">facei</span><span class="p">]</span><span class="p">)</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">const</span> <span class="n">scalarField</span> <span class="nf">det</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">a12</span><span class="o">*</span><span class="n">a12</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">scalarField</span> <span class="nf">a</span><span class="p">(</span><span class="p">(</span><span class="n">b1</span> <span class="o">-</span> <span class="n">a12</span><span class="o">*</span><span class="n">b2</span><span class="p">)</span><span class="o">/</span><span class="n">det</span><span class="p">)</span><span class="p">;</span>
+            <span class="n">scalarField</span> <span class="nf">b</span><span class="p">(</span><span class="p">(</span><span class="n">b2</span> <span class="o">-</span> <span class="n">a12</span><span class="o">*</span><span class="n">b1</span><span class="p">)</span><span class="o">/</span><span class="n">det</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">nHatp</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">nf</span> <span class="o">+</span> <span class="n">b</span><span class="o">*</span><span class="n">nHatp</span><span class="p">;</span>
+            <span class="n">nHatp</span> <span class="o">/</span><span class="o">=</span> <span class="p">(</span><span class="n">mag</span><span class="p">(</span><span class="n">nHatp</span><span class="p">)</span> <span class="o">+</span> <span class="n">deltaN</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+
+            <span class="n">acap</span><span class="p">.</span><span class="n">gradient</span><span class="p">(</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">nf</span> <span class="o">&amp;</span> <span class="n">nHatp</span><span class="p">)</span><span class="o">*</span><span class="n">mag</span><span class="p">(</span><span class="n">gradAlphafb</span><span class="p">[</span><span class="n">patchi</span><span class="p">]</span><span class="p">)</span><span class="p">;</span>
+            <span class="n">acap</span><span class="p">.</span><span class="n">evaluate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+        <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>值得注意的一点是，该函数返回的是<code>tmp&lt;surfaceVectorField&gt;</code>。这就导致一个问题，即使在原函数不变的基础上，定义一个中间变量<code>surfaceVectorField</code>，再返回这个场，编译可以通过，但运行时会报错。因此，只能先构建一个<code>tmp</code>对象，再对它的引用操作。关于<code>tmp</code>机制可以参见<a href="https://marinecfd.xyz/post/openfoam-tmp/">这篇博客</a>。</p>
+</div>
+<div class="post-copyright">
+<p class="copyright-item">
+<span class="item-title">Author</span>
+<span class="item-content">ZZQ</span>
+</p>
+<p class="copyright-item">
+<span class="item-title">LastMod</span>
+<span class="item-content">
+        Monday, March 30, 2020
+        
+    </span>
+</p>
+</div>
+<footer class="post-footer">
+<div class="post-tags">
+<a href="/tags/contact-angle/">Contact Angle</a>
+<a href="/tags/openfoam/">OpenFOAM</a>
+<a href="/tags/code/">code</a>
+</div>
+<nav class="post-nav">
+<a class="next" href="/post/irmf1/">
+<span class="next-text nav-default">IRMIF中的多流体模型</span>
+<span class="next-text nav-mobile">Next</span>
+<i class="iconfont icon-right"></i>
+</a>
+</nav>
+</footer>
+</article>
+</div>
+</div>
+</main>
+<footer class="footer" id="footer">
+<div class="social-links">
+<a class="iconfont icon-email" href="mailto:zuozqi@sjtu.edu.cn" title="email"></a>
+<a class="iconfont icon-rss" href="http://localhost:1313/index.xml" title="rss" type="application/rss+xml"></a>
+</div>
+<div class="copyright">
+<span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+</span>
+<span class="division">|</span>
+<span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+</span>
+<span class="copyright-year">
+    © 
+    2020
+    <span class="heart">
+<i class="iconfont icon-heart"></i>
+</span>
+<span class="author">ZZQ</span>
+</span>
+</div>
+</footer>
+<div class="back-to-top" id="back-to-top">
+<i class="iconfont icon-up"></i>
+</div>
+</div>
+<script crossorigin="anonymous" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js"></script>
+<script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script src="/dist/even.26188efa.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+    window.MathJax = {
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+      TeX: {equationNumbers: {autoNumber: "AMS"}},
+      showProcessingMessages: false,
+      messageStyle: 'none'
+    };
+  </script>
+<script async="" crossorigin="anonymous" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

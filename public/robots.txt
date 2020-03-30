@@ -5,19 +5,23 @@ Disallow: /categories/
 
 Disallow: /tags/code/
 
-Disallow: /tags/ec/
+Disallow: /tags/contact-angle/
 
-Disallow: /post/irmf1/
+Disallow: /post/irmifca/
 
 Disallow: /
 
-Disallow: /tags/openfoam/
-
 Disallow: /categories/openfoam/
+
+Disallow: /tags/openfoam/
 
 Disallow: /post/
 
 Disallow: /tags/
+
+Disallow: /tags/ec/
+
+Disallow: /post/irmf1/
 
 Disallow: /post/irmif/
 
