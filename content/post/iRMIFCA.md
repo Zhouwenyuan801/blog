@@ -500,5 +500,5 @@ Foam::tmp<Foam::surfaceVectorField> Foam::phaseSystem::nHatfv
         }
 ```
 
-值得注意的一点是，该函数返回的是`tmp<surfaceVectorField>`。这就导致一个问题，即使在原函数不变的基础上，定义一个中间变量`surfaceVectorField`，再返回这个场，编译可以通过，但运行时会报错。因此，只能先构建一个`tmp`对象，再对它的引用操作。关于`tmp`机制可以参见[这篇博客](https://marinecfd.xyz/post/openfoam-tmp/)。
+值得注意的一点是，该函数返回的是`tmp<surfaceVectorField>`。这就导致一个问题，即使在原函数不变的基础上，定义一个中间变量`surfaceVectorField`，再返回这个场，编译可以通过，但运行时会报错。因此，只能先构建一个`tmp`封装的对象，再对它的引用操作。关于`tmp`机制可以参见[这篇博客](https://marinecfd.xyz/post/openfoam-tmp/)。
 

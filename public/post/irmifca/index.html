@@ -32,7 +32,7 @@
 <meta content="icoReactingMultiphaseInterFoam中接触角的设置" itemprop="description"/>
 <meta content="2020-03-30T13:03:32+08:00" itemprop="datePublished"/>
 <meta content="2020-03-30T13:03:32+08:00" itemprop="dateModified"/>
-<meta content="4110" itemprop="wordCount"/>
+<meta content="4113" itemprop="wordCount"/>
 <meta content="Contact Angle,OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
 <meta content="IRMIF中接触角的设置" name="twitter:title"/>
 <meta content="icoReactingMultiphaseInterFoam中接触角的设置" name="twitter:description"/>
@@ -98,7 +98,7 @@
 <div class="post-category">
 <a href="/categories/openfoam/"> OpenFOAM </a>
 </div>
-<span class="more-meta"> 4110 words </span>
+<span class="more-meta"> 4113 words </span>
 <span class="more-meta"> 9 mins read </span>
 </div>
 </header>
@@ -896,7 +896,7 @@ $$
         <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>值得注意的一点是，该函数返回的是<code>tmp&lt;surfaceVectorField&gt;</code>。这就导致一个问题，即使在原函数不变的基础上，定义一个中间变量<code>surfaceVectorField</code>，再返回这个场，编译可以通过，但运行时会报错。因此，只能先构建一个<code>tmp</code>对象，再对它的引用操作。关于<code>tmp</code>机制可以参见<a href="https://marinecfd.xyz/post/openfoam-tmp/">这篇博客</a>。</p>
+</div><p>值得注意的一点是，该函数返回的是<code>tmp&lt;surfaceVectorField&gt;</code>。这就导致一个问题，即使在原函数不变的基础上，定义一个中间变量<code>surfaceVectorField</code>，再返回这个场，编译可以通过，但运行时会报错。因此，只能先构建一个<code>tmp</code>封装的对象，再对它的引用操作。关于<code>tmp</code>机制可以参见<a href="https://marinecfd.xyz/post/openfoam-tmp/">这篇博客</a>。</p>
 </div>
 <div class="post-copyright">
 <p class="copyright-item">
