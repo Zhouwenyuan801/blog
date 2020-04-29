@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+<title>compressibleInterFoam概览 - MrZZQi's Blog</title>
+<meta content="webkit" name="renderer"/>
+<meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport"/>
+<meta content="no-transform" http-equiv="Cache-Control"/>
+<meta content="no-siteapp" http-equiv="Cache-Control"/>
+<meta content="#f8f5ec" name="theme-color"/>
+<meta content="#f8f5ec" name="msapplication-navbutton-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="#f8f5ec" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="ZZQ" name="author"/><meta content="无奈啊" name="description"/><meta content="compressibleInterFoam, OpenFOAM" name="keywords"/>
+<meta content="Hugo 0.64.1 with theme even" name="generator"/>
+<link href="http://localhost:1313/post/cif/" rel="canonical"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet"/>
+<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" rel="stylesheet"/>
+<meta content="compressibleInterFoam概览" property="og:title"/>
+<meta content="无奈啊" property="og:description"/>
+<meta content="article" property="og:type"/>
+<meta content="http://localhost:1313/post/cif/" property="og:url"/>
+<meta content="2020-04-28T13:03:32+08:00" property="article:published_time"/>
+<meta content="2020-04-28T13:03:32+08:00" property="article:modified_time"/>
+<meta content="compressibleInterFoam概览" itemprop="name"/>
+<meta content="无奈啊" itemprop="description"/>
+<meta content="2020-04-28T13:03:32+08:00" itemprop="datePublished"/>
+<meta content="2020-04-28T13:03:32+08:00" itemprop="dateModified"/>
+<meta content="2304" itemprop="wordCount"/>
+<meta content="OpenFOAM,code," itemprop="keywords"/><meta content="summary" name="twitter:card"/>
+<meta content="compressibleInterFoam概览" name="twitter:title"/>
+<meta content="无奈啊" name="twitter:description"/>
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+</head>
+<body>
+<div class="mobile-navbar" id="mobile-navbar">
+<div class="mobile-header-logo">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<div class="mobile-navbar-icon">
+<span></span>
+<span></span>
+<span></span>
+</div>
+</div>
+<nav class="mobile-menu slideout-menu" id="mobile-menu">
+<ul class="mobile-menu-list">
+<a href="/">
+<li class="mobile-menu-item">Home</li>
+</a><a href="/post/">
+<li class="mobile-menu-item">Archives</li>
+</a><a href="/tags/">
+<li class="mobile-menu-item">Tags</li>
+</a><a href="/categories/">
+<li class="mobile-menu-item">Categories</li>
+</a>
+</ul>
+</nav>
+<div class="container" id="mobile-panel">
+<header class="header" id="header">
+<div class="logo-wrapper">
+<a class="logo" href="/">MrZZQi's Blog</a>
+</div>
+<nav class="site-navbar">
+<ul class="menu" id="menu">
+<li class="menu-item">
+<a class="menu-item-link" href="/">Home</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/post/">Archives</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/tags/">Tags</a>
+</li><li class="menu-item">
+<a class="menu-item-link" href="/categories/">Categories</a>
+</li>
+</ul>
+</nav>
+</header>
+<main class="main" id="main">
+<div class="content-wrapper">
+<div class="content" id="content">
+<article class="post">
+<header class="post-header">
+<h1 class="post-title">compressibleInterFoam概览</h1>
+<div class="post-meta">
+<span class="post-time"> Tuesday, April 28, 2020 </span>
+<div class="post-category">
+<a href="/categories/openfoam/"> OpenFOAM </a>
+</div>
+<span class="more-meta"> 2304 words </span>
+<span class="more-meta"> 5 mins read </span>
+</div>
+</header>
+<div class="post-toc" id="post-toc">
+<h2 class="post-toc-title">Contents</h2>
+<div class="post-toc-content">
+<nav id="TableOfContents">
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#求解器主题结构">求解器主题结构</a></li>
+<li><a href="#控制方程">控制方程</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<div class="post-content">
+<h2 id="前言">前言</h2>
+<p>iRMIF本身并不支持可压流体的计算，这点在求解器的描述中已清楚地点明。然而自增压过程天然的是可压流动的范畴，因为气侧的密度、温度会极大的影响封闭体系内的压力。即使如前面博客所述将密度改为温度的函数，也会出现两个问题：1，极易发散。2，压力计算不正常，表现为并无增长或减小，只是在一值附近波动。因此，只能放弃使用iRMIF求解自增压过程。重新看标准求解器，发现有两个重要的选项：1，<code>compressibleInterFoam</code>;2，<code>reactingTowPhaseEulerFoam</code>。前者是基于<code>interFoam</code>发展的可压流动求解器，后者则是另一套思路，对每一相单独求解NS方程，在相间引入拖曳力、升力模型等。虽然Euler方法事实上所需网格明显少于VOF方法，但是因为要引入另外的模化方程，其准确性又变得难以估计。因此，决定在<code>compressibleInterFoam</code>的基础上，耦合进相间传热传质模型。</p>
+<p>相变模型的耦合同样有两种思路：1. 参考<code>interCondensatingEvaporatingFoam</code>的组织架构。2. <code>icoReactingMultiInterFoam</code>的组织架构。前面已经分析过，<code>iCEF</code>在低温下失效主要是因为其没有使用标准的热物理库接口，同时其处理相变产生的源项时的方法不是很稳定。而<code>iRMIF</code>内很多内容是目前不需要的，比如多相多组分间的传质。<code>cIF</code>本身使用了热物理类的接口，因此，初定的思路是按照<code>iCEF</code>的架构，同时修改一些细节。但是无论如何，要先理清<code>cIF</code>求解器的逻辑。</p>
+<h2 id="求解器主题结构">求解器主题结构</h2>
+<p>首先要看的是<code>cIF</code>中数据存储结构。在<code>createFields</code>中，声明了<code>twoPhaseMixtureThermo</code>对象<code>mixture</code>（和<code>interFoam</code>一致），该对象中储存了几乎所有的两相的物性读取和计算方法。在构建该对象时，根据初始速度、通量调用<code>phiThermo</code>，<code>twoPhaseMixture</code>，<code>interfaceProperties</code>的构造函数，并且构造两个<code>rhoThermo</code>对象。之后通过<code>mixture</code>对象初始化相分布以及其他的物性。</p>
+<p>在主文件中，求解过程也与<code>interFoam</code>非常相似，区别是，在<code>PIMPLE</code>循环中，调用的是<code>compressibleAlphaEqnSubCycle.H</code>以求解相分布。其余温度、压力和速度方程的调用位置均未改变。</p>
+<h2 id="控制方程">控制方程</h2>
+<p>对比<code>iRMIF</code>,<code>UEqn</code>基本没有区别。<code>TEqn</code>中，RHS少了因相变引入的源项。主要区别在于<code>alphaEqn.H</code>和<code>PEqn.H</code>。下面具体介绍该可压求解器中压力、相分布求解的改变，主要参考<a href="https://www.cfd-online.com/Forums/openfoam-solving/70965-formulation-compressibleinterfoam-2.html">这里</a>的讨论。</p>
+<p>混合物的密度为，
+$$
+\rho = \alpha_1 \rho1 + \alpha2 \rho2
+$$
+那么对于每一相的质量连续性方程为，
+$$
+\frac{d}{dt}(\rho_i \alpha_i )+\nabla\cdot(\rho_i\alpha_iU) = 0
+$$
+考虑每一个时间步内的密度是常量，有
+$$
+\frac{d}{dt}(\alpha_i )+\nabla\cdot(\alpha_iU) = -\frac{\alpha_i}{\rho_i}\frac{D}{Dt}\rho_i
+$$
+考虑每一相的压缩性， $\rho_i= \rho_0 + \psi_i p$，其中$\psi_i$为压缩因子，$p$为压力，上式可以写为式（1），
+$$
+\frac{d}{dt}(\alpha_i )+\nabla\cdot(\alpha_iU) = -\frac{\alpha_i \psi_i}{\rho_i}\frac{D}{Dt}p
+$$
+把两相相加，左侧为速度的散度，即式（2）
+$$
+\nabla\cdot(U)=-(\frac{\alpha_1\psi_1}{\rho_1}-\frac{\alpha_2\psi_2}{\rho_2})
+$$</p>
+<p>式(1)的RHS可以写为
+$$
+RHS = \alpha_1 \nabla\cdot(U) + \alpha_1 \dot{g}
+$$
+其中$\dot{g}$是源项，$\dot{g} = (\psi_2/\rho2 - \psi1/\rho_1)D/Dt(p)$。</p>
+<p>因为压力修正过程中用到了连续性方程，所以对应的压力求解也有区别。我们先来看<code>PEqn.H</code>。</p>
+<p>与<code>interFoam</code>或<code>icoFoam</code>相同，开始构造了离散的压力泊松方程，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">    <span class="n">volScalarField</span> <span class="nf">rAU</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">rAU</span><span class="s">"</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">UEqn</span><span class="p">.</span><span class="n">A</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+    <span class="n">surfaceScalarField</span> <span class="nf">rAUf</span><span class="p">(</span><span class="sa"></span><span class="s">"</span><span class="s">rAUf</span><span class="s">"</span><span class="p">,</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">rAU</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+    <span class="n">volVectorField</span> <span class="nf">HbyA</span><span class="p">(</span><span class="n">constrainHbyA</span><span class="p">(</span><span class="n">rAU</span><span class="o">*</span><span class="n">UEqn</span><span class="p">.</span><span class="n">H</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">p_rgh</span><span class="p">)</span><span class="p">)</span><span class="p">;</span>
+    <span class="n">surfaceScalarField</span> <span class="nf">phiHbyA</span>
+    <span class="p">(</span>
+        <span class="sa"></span><span class="s">"</span><span class="s">phiHbyA</span><span class="s">"</span><span class="p">,</span>
+        <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">flux</span><span class="p">(</span><span class="n">HbyA</span><span class="p">)</span>
+      <span class="o">+</span> <span class="n">MRF</span><span class="p">.</span><span class="n">zeroFilter</span><span class="p">(</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">interpolate</span><span class="p">(</span><span class="n">rho</span><span class="o">*</span><span class="n">rAU</span><span class="p">)</span><span class="o">*</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">ddtCorr</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+    <span class="n">MRF</span><span class="p">.</span><span class="n">makeRelative</span><span class="p">(</span><span class="n">phiHbyA</span><span class="p">)</span><span class="p">;</span>
+
+    <span class="n">surfaceScalarField</span> <span class="nf">phig</span>
+    <span class="p">(</span>
+        <span class="p">(</span>
+            <span class="n">mixture</span><span class="p">.</span><span class="n">surfaceTensionForce</span><span class="p">(</span><span class="p">)</span>
+          <span class="o">-</span> <span class="n">ghf</span><span class="o">*</span><span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">snGrad</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">*</span><span class="n">rAUf</span><span class="o">*</span><span class="n">mesh</span><span class="p">.</span><span class="n">magSf</span><span class="p">(</span><span class="p">)</span>
+    <span class="p">)</span><span class="p">;</span>
+
+    <span class="n">phiHbyA</span> <span class="o">+</span><span class="o">=</span> <span class="n">phig</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>对应
+$$
+\bold{HbyA} = \frac{1}{A_p}(-\sum A_N \vec{U}^*_N +\vec{S}^n_P )
+$$
+具体可以参考这篇<a href="http://dyfluid.com/icoFoam.html">博客</a>。</p>
+<p>之后，区别于不可压求解器，构建了两个部分<code>p_rghEqnComp1</code>，<code>p_rghEqnComp2</code>分别对应两相的不可压部分。并赋值为，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">        <span class="n">p_rghEqnComp1</span> <span class="o">=</span>
+            <span class="n">pos</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span>
+           <span class="o">*</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">rho1</span><span class="p">)</span> <span class="o">+</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">alphaPhi1</span><span class="o">*</span><span class="n">rho1f</span><span class="p">)</span>
+                  <span class="o">-</span> <span class="p">(</span><span class="n">fvOptions</span><span class="p">(</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">mixture</span><span class="p">.</span><span class="n">thermo1</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="o">&amp;</span><span class="n">rho1</span><span class="p">)</span>
+                <span class="p">)</span><span class="o">/</span><span class="n">rho1</span>
+              <span class="o">-</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span> <span class="o">-</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">alphaPhi1</span><span class="p">)</span>
+              <span class="o">+</span> <span class="p">(</span><span class="n">alpha1</span><span class="o">*</span><span class="n">psi1</span><span class="o">/</span><span class="n">rho1</span><span class="p">)</span><span class="o">*</span><span class="n">correction</span><span class="p">(</span><span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">p_rgh</span><span class="p">)</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+
+        <span class="n">p_rghEqnComp2</span> <span class="o">=</span>
+            <span class="n">pos</span><span class="p">(</span><span class="n">alpha2</span><span class="p">)</span>
+           <span class="o">*</span><span class="p">(</span>
+               <span class="p">(</span>
+                   <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">alpha2</span><span class="p">,</span> <span class="n">rho2</span><span class="p">)</span> <span class="o">+</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">alphaPhi2</span><span class="o">*</span><span class="n">rho2f</span><span class="p">)</span>
+                 <span class="o">-</span> <span class="p">(</span><span class="n">fvOptions</span><span class="p">(</span><span class="n">alpha2</span><span class="p">,</span> <span class="n">mixture</span><span class="p">.</span><span class="n">thermo2</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="n">rho</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="o">&amp;</span><span class="n">rho2</span><span class="p">)</span>
+               <span class="p">)</span><span class="o">/</span><span class="n">rho2</span>
+             <span class="o">-</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">alpha2</span><span class="p">)</span> <span class="o">-</span> <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">alphaPhi2</span><span class="p">)</span>
+             <span class="o">+</span> <span class="p">(</span><span class="n">alpha2</span><span class="o">*</span><span class="n">psi2</span><span class="o">/</span><span class="n">rho2</span><span class="p">)</span><span class="o">*</span><span class="n">correction</span><span class="p">(</span><span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">ddt</span><span class="p">(</span><span class="n">p_rgh</span><span class="p">)</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>定义中括号里的对应连续性方程，收敛时应为0。后面的<code>correction()</code>表示为新旧两个值得差，新值对应的是式（1），收敛时也为0。因此最后收敛时只剩下$p_{old}$这一项数学表达为
+$$
+p_{\rho gh,com1} =\frac{1}{\rho_1}(\frac{d}{dt}(\alpha_1\rho_1)+\nabla\cdot(\alpha_1\rho_1U))-\frac{d}{dt}(\alpha_1)-\nabla\cdot(\alpha_1U)+\frac{\alpha_1\psi_1}{\rho_1}\frac{D}{Dt}(p-p_{old})
+$$</p>
+<p>$$
+p_{\rho gh,com1} =-\frac{\alpha_1\psi_1}{\rho_1}\frac{D}{Dt}p_{old}
+$$</p>
+<p>这其实就是式1的RHS。</p>
+<p>随后，两部分可压部分加上不可压部分后共同求解，关于压力修正方程的细节可以参考这篇<a href="https://www.cfd-online.com/Forums/openfoam-solving/196243-understanding-terms-compressible-peqn.html">博客</a>，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">        <span class="n">fvScalarMatrix</span> <span class="nf">p_rghEqnIncomp</span>
+        <span class="p">(</span>
+            <span class="n">fvc</span><span class="o">:</span><span class="o">:</span><span class="n">div</span><span class="p">(</span><span class="n">phiHbyA</span><span class="p">)</span>
+          <span class="o">-</span> <span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">laplacian</span><span class="p">(</span><span class="n">rAUf</span><span class="p">,</span> <span class="n">p_rgh</span><span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+
+        <span class="n">solve</span>
+        <span class="p">(</span>
+            <span class="n">p_rghEqnComp1</span><span class="p">(</span><span class="p">)</span> <span class="o">+</span> <span class="n">p_rghEqnComp2</span><span class="p">(</span><span class="p">)</span> <span class="o">+</span> <span class="n">p_rghEqnIncomp</span><span class="p">,</span>
+            <span class="n">mesh</span><span class="p">.</span><span class="n">solver</span><span class="p">(</span><span class="n">p_rgh</span><span class="p">.</span><span class="n">select</span><span class="p">(</span><span class="n">pimple</span><span class="p">.</span><span class="n">finalInnerIter</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在最后一步迭代的时候，赋值给<code>dgdt</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">            <span class="n">dgdt</span> <span class="o">=</span>
+            <span class="p">(</span>
+                <span class="n">alpha1</span><span class="o">*</span><span class="p">(</span><span class="n">p_rghEqnComp2</span> <span class="o">&amp;</span> <span class="n">p_rgh</span><span class="p">)</span>
+              <span class="o">-</span> <span class="n">alpha2</span><span class="o">*</span><span class="p">(</span><span class="n">p_rghEqnComp1</span> <span class="o">&amp;</span> <span class="n">p_rgh</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里网上给出的结论都是对应的，
+$$
+\dot{g} = \alpha_1\alpha_2(\frac{\psi_2}{\rho_2}-\frac{\psi_1}{\rho_1})\frac{Dp}{Dt}
+$$
+这里<code>p_rghEqnComp1 &amp; p_rgh</code>起到的作用怎么也查不到，只能先默认是对的。</p>
+<p>到这里压力的部分就结束了。</p>
+<p>随后，在<code>compressibleAlphaEqnSubcycle.H</code>中，调用了<code>alphaEqn.H</code>，而<code>alphaEqn.H</code>又调用了<code>alphaSuSp.H</code>。在<code>alphaSuSp.H</code>中，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">forAll</span><span class="p">(</span><span class="n">dgdt</span><span class="p">,</span> <span class="n">celli</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">dgdt</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">Sp</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">-</span><span class="o">=</span> <span class="n">dgdt</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="o">/</span><span class="n">max</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">)</span><span class="p">;</span>
+        <span class="n">Su</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">+</span><span class="o">=</span> <span class="n">dgdt</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="o">/</span><span class="n">max</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">dgdt</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">Sp</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span> <span class="o">+</span><span class="o">=</span> <span class="n">dgdt</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="o">/</span><span class="n">max</span><span class="p">(</span><span class="n">alpha1</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">)</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>即将源项按对角占优原则处理，在相方程中，求解的是，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-c++" data-lang="c++">        <span class="n">fvScalarMatrix</span> <span class="nf">alpha1Eqn</span>
+        <span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">LTS</span>
+              <span class="o">?</span> <span class="n">fv</span><span class="o">:</span><span class="o">:</span><span class="n">localEulerDdtScheme</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span><span class="p">.</span><span class="n">fvmDdt</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span>
+              <span class="o">:</span> <span class="n">fv</span><span class="o">:</span><span class="o">:</span><span class="n">EulerDdtScheme</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span><span class="p">.</span><span class="n">fvmDdt</span><span class="p">(</span><span class="n">alpha1</span><span class="p">)</span>
+            <span class="p">)</span>
+          <span class="o">+</span> <span class="n">fv</span><span class="o">:</span><span class="o">:</span><span class="n">gaussConvectionScheme</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span>
+            <span class="p">(</span>
+                <span class="n">mesh</span><span class="p">,</span>
+                <span class="n">phiCN</span><span class="p">,</span>
+                <span class="n">upwind</span><span class="o">&lt;</span><span class="n">scalar</span><span class="o">&gt;</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">phiCN</span><span class="p">)</span>
+            <span class="p">)</span><span class="p">.</span><span class="n">fvmDiv</span><span class="p">(</span><span class="n">phiCN</span><span class="p">,</span> <span class="n">alpha1</span><span class="p">)</span>
+       <span class="c1">// - fvm::Sp(fvc::ddt(dimensionedScalar("1", dimless, 1), mesh)
+</span><span class="c1"></span>       <span class="c1">//           + fvc::div(phiCN), alpha1)
+</span><span class="c1"></span>         <span class="o">=</span><span class="o">=</span>
+            <span class="n">Su</span> <span class="o">+</span> <span class="n">fvm</span><span class="o">:</span><span class="o">:</span><span class="n">Sp</span><span class="p">(</span><span class="n">Sp</span> <span class="o">+</span> <span class="n">divU</span><span class="p">,</span> <span class="n">alpha1</span><span class="p">)</span>
+        <span class="p">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>简单推导后，代入式（2），即可得到该式即对应式（1）。至此，控制方程就分析完了。</p>
+<p>如果需要在该求解器中耦合传热传质，要考虑的事情有：</p>
+<ol>
+<li>
+<p>在mixture类中植入相间传质速率的计算方法，可以从<code>interfaceComposition</code>着手，也可以简单地使用<code>iCEF</code>中的方法</p>
+</li>
+<li>
+<p>类似的，参考<code>iRMIF</code>或<code>iCEF</code>，做出相间传热的计算方法。</p>
+</li>
+<li>
+<p>在<code>TEqn</code>，<code>UEqn</code>，和<code>alphaSuSp</code>中，将相变引入的源项做相应的处理。</p>
+<p>对应方程的修改应该追溯到
+$$
+\frac{d}{dt}(\rho_1\alpha_1) + \nabla\cdot(\rho_1\alpha_1U) = \dot{m}
+$$</p>
+</li>
+</ol>
+</div>
+<div class="post-copyright">
+<p class="copyright-item">
+<span class="item-title">Author</span>
+<span class="item-content">ZZQ</span>
+</p>
+<p class="copyright-item">
+<span class="item-title">LastMod</span>
+<span class="item-content">
+        Tuesday, April 28, 2020
+        
+    </span>
+</p>
+</div>
+<footer class="post-footer">
+<div class="post-tags">
+<a href="/tags/openfoam/">OpenFOAM</a>
+<a href="/tags/code/">code</a>
+</div>
+<nav class="post-nav">
+<a class="next" href="/post/irmifca/">
+<span class="next-text nav-default">IRMIF中接触角的设置</span>
+<span class="next-text nav-mobile">Next</span>
+<i class="iconfont icon-right"></i>
+</a>
+</nav>
+</footer>
+</article>
+</div>
+</div>
+</main>
+<footer class="footer" id="footer">
+<div class="social-links">
+<a class="iconfont icon-email" href="mailto:zuozqi@sjtu.edu.cn" title="email"></a>
+<a class="iconfont icon-rss" href="http://localhost:1313/index.xml" title="rss" type="application/rss+xml"></a>
+</div>
+<div class="copyright">
+<span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+</span>
+<span class="division">|</span>
+<span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+</span>
+<span class="copyright-year">
+    © 
+    2020
+    <span class="heart">
+<i class="iconfont icon-heart"></i>
+</span>
+<span class="author">ZZQ</span>
+</span>
+</div>
+</footer>
+<div class="back-to-top" id="back-to-top">
+<i class="iconfont icon-up"></i>
+</div>
+</div>
+<script crossorigin="anonymous" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js"></script>
+<script crossorigin="anonymous" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js"></script>
+<script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script src="/dist/even.26188efa.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+    window.MathJax = {
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+      TeX: {equationNumbers: {autoNumber: "AMS"}},
+      showProcessingMessages: false,
+      messageStyle: 'none'
+    };
+  </script>
+<script async="" crossorigin="anonymous" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

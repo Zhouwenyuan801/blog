@@ -5,9 +5,7 @@ Disallow: /categories/
 
 Disallow: /tags/code/
 
-Disallow: /tags/contact-angle/
-
-Disallow: /post/irmifca/
+Disallow: /post/cif/
 
 Disallow: /
 
@@ -18,6 +16,10 @@ Disallow: /tags/openfoam/
 Disallow: /post/
 
 Disallow: /tags/
+
+Disallow: /tags/contact-angle/
+
+Disallow: /post/irmifca/
 
 Disallow: /tags/ec/
 
